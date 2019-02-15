@@ -21,43 +21,35 @@ class Model(object):
             return ""
         
 
-    def attributes_type_point(self, dataset_name):
+    def attributes_type(self, dataset_name):
         dataset = self.load_dataset(dataset_name)
-        attribute_types = self.attributes_type_modulus(dataset)
+        attribute_types = self.attributes_type_packing(dataset)
         return attribute_types
         
        
-    def attributes_type_point(self, dataset):
-        #using modulus to understand kind of item
+    def attributes_type_packing(self, dataset):
+        #using the '.' symbol to undestand if float or integer
         attribute_types = []
         for item in dataset[0]: #only the first row
-            
-            if ((str(item)).replace('.', '').isdigit()):
-                if (str(item).find('.') == -1):
-                    attribute_types.append('Discrete')
-                else:
-                    attribute_types.append('Continuous')
-            else:
-                attribute_types.append('Categorical')
-                print(item)
+            attribute_types.append(self.attribute_single_type(item))
+            #print(item)
         return attribute_types
 
-    def attributes_type_type(self, dataset):
-        #using the type function to understand kind of item. Only works if dataset contains different types (if they are all strings, when converted will lose their type)
-        attribute_types = []
-        for item in dataset[0]: #only the first row
-            if str(item).isdigit():
-                if type(item) == int:
-                    attribute_types.append('Discrete')
-                elif type(item) == float:
-                    attribute_types.append('Continuous')
+    
+    def attribute_single_type(self, item):
+        #used to return each attribute as a single type. It can be reused in other functions
+        if ((str(item)).replace('.', '').isdigit()):
+            if (str(item).find('.') == -1):
+                return ('Discrete')
             else:
-                attribute_types.append('Categorical')
-        return attribute_types
+                return ('Continuous')
+        else:
+            return ('Categorical')
+        
 
     def calculate_info_attribute(self, index):
         #todo:check that first is not empty (missing) and find next proper one. Not sure if I should check against "" string only
-        if(type(self.dataset[0][index]) == str):
+        if(self.attribute_single_type(self.dataset[0][index]) == 'Categorical'):
             self.calculate_info_categorical(index)
     
     def calculate_info_numerical_(self, index):

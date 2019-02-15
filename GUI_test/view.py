@@ -64,16 +64,10 @@ class View(object):
         layout_right.addLayout(layout_right1)
         layout_right.addLayout(layout_right2)
 
-        attr_name_lbl = QLabel('Attr. name')
-        attr_type_lbl = QLabel('type')
+        attr_name_lbl = QLabel('Attr. name1')
+        attr_type_lbl = QLabel('*type1')
         layout_right1.addWidget(attr_name_lbl)
-        layout_right1.addWidget(QLabel('right!!!!!!!!!!!!!!!!!!!'))
-        layout_right1.addWidget(QLabel('right'))
-        layout_right1.addWidget(QLabel('right'))
-        layout_right2.addWidget(attr_type_lbl)
-        layout_right2.addWidget(QLabel('left'))
-        layout_right2.addWidget(QLabel('left'))
-        layout_right2.addWidget(QLabel('left'))
+        
         right_group.setLayout(layout_right)
      
         
