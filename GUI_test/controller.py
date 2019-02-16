@@ -34,7 +34,8 @@ class Controller(object):
         #if(index == -1):
         #    print("problem in finding index from label attribute name")
         #    return None
-        self.model.calculate_info_attribute(index)
+        attribute_info = self.model.calculate_info_attribute(index)
+        self.view.set_attribute_info(attribute_info)
 
     def transform_to_attribute_index(attribute : str):
         digit_index = -1

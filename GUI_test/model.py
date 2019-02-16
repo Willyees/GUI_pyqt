@@ -50,7 +50,7 @@ class Model(object):
     def calculate_info_attribute(self, index):
         #todo:check that first is not empty (missing) and find next proper one. Not sure if I should check against "" string only
         if(self.attribute_single_type(self.dataset[0][index]) == 'Categorical'):
-            self.calculate_info_categorical(index)
+            return self.calculate_info_categorical(index)
     
     def calculate_info_numerical_(self, index):
         #min, max, mean, std deviation
@@ -58,7 +58,7 @@ class Model(object):
 
 
     def calculate_info_categorical(self, index):
-    
+        """find different categories and their frequencies. returned list: [[name1, frequency], [name2, freq2]..]"""
         categories = []
         print(self.dataset[0][index])
         if(self.dataset[0][index] != ""):
@@ -70,5 +70,5 @@ class Model(object):
                     break
             else:
                 categories.append([self.dataset[i][index], 1])
-        print(categories)
+        return categories
             
