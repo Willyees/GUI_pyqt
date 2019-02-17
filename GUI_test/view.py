@@ -8,17 +8,17 @@ class View(object):
         self.listener = EventListener()
         self.app = QApplication([])
         self.window = QWidget()
-       
-        
+     
+    def test_(self):
+        print('cmb_box signal')
+
     def startView(self):
-        print("start view")
-        
         main_layout = QGridLayout()
         
         #upper top left
-        cmb_box_dataset = QComboBox(objectName = 'cmb_box_dataset')
+        cmb_box_dataset = QComboBox(objectName = 'cmb_box_dataset', currentIndexChanged = self.listener.dataset_chosen_changed)
         #cmb_box_dataset.currentIndexChanged.connect(self.test_cmb)
-        cmb_box_dataset.addItems(['KDD99', 'D2'])
+        cmb_box_dataset.addItems(['KDD99', 'KDD99'])
         label_dataset = QLabel('Datasets')
         label_dataset.setBuddy(cmb_box_dataset)
         btn_import = QPushButton('IMPORT')
@@ -70,7 +70,7 @@ class View(object):
         
         alg_label = QLabel('Algorithm to apply')
         alg_label.setBuddy(alg_menu)
-        apply_btn = QPushButton('&APPLY', clicked = self.listener.dataset_chosen_changed)
+        apply_btn = QPushButton('&APPLY')
         layout_button.addWidget(alg_label)
         layout_button.addWidget(alg_menu)
         layout_button.addWidget(apply_btn)

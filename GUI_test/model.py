@@ -29,7 +29,6 @@ class Model(object):
         attribute_types = self.attributes_type_packing(dataset)
         return attribute_types
         
-       
     def attributes_type_packing(self, dataset):
         #using the '.' symbol to undestand if float or integer
         attribute_types = []

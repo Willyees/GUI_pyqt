@@ -25,9 +25,10 @@ class Controller(object):
 
     def set_dataset(self):
         dataset_str = self.view.get_dataset_chosen()
-        dataset_attributes = self.model.attributes_type(dataset_str)
-        if(dataset_attributes != [""]):
-            self.view.set_attr_group(dataset_attributes)
+        if(dataset_str != 'None'):
+            dataset_attributes = self.model.attributes_type(dataset_str)
+            if(dataset_attributes != [""]):
+                self.view.set_attr_group(dataset_attributes)
     
     def attribute_chosen(self, index):
         #index = self.transform_to_attribute_index(attribute)
