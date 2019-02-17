@@ -1,4 +1,6 @@
 from sklearn import datasets
+import math
+
 class Model(object):
     
     def __init__(self):
@@ -7,8 +9,9 @@ class Model(object):
         self.dataset_attr_info = []
         self.attributes_number = 0
 
-    """retreives data and works on it"""
+    
     def load_dataset(self, dataset):
+        """retreives data and works on it"""
         if(dataset == "KDD99"):
             kdd = datasets.fetch_kddcup99()
             self.dataset_length = len(kdd.data)
@@ -51,11 +54,38 @@ class Model(object):
         #todo:check that first is not empty (missing) and find next proper one. Not sure if I should check against "" string only
         if(self.attribute_single_type(self.dataset[0][index]) == 'Categorical'):
             return self.calculate_info_categorical(index)
-    
-    def calculate_info_numerical_(self, index):
-        #min, max, mean, std deviation
-        pass
+        if(self.attribute_single_type(self.dataset[0][index]) == 'Discrete'):#trying with a discrete
+            #set info in the right format (each inner list is one row in the view)
+            continuous = self.calculate_info_continuous(index)
+            l_formatted = [['minimum', continuous[0]], ['maximum', continuous[1]],['mean', continuous[2]],['standard deviation', continuous[3]]]
+            return l_formatted
 
+    def calculate_info_continuous(self, index):
+        #min, max, mean, std deviation
+        minimum, maximum, mean = self.calculate_minmaxmean(index)#MEAN not working, TODO check!
+        std_deviation = self.calculate_stddeviation(index, mean)
+        return [minimum, maximum, mean, std_deviation]
+        
+    def calculate_stddeviation(self, index, mean):
+        sigma = 0
+        for i in range(len(self.dataset)):
+            sigma += (self.dataset[i][index] - mean) ** 2
+        std_deviation = math.sqrt(sigma / len(self.dataset))
+        return std_deviation
+
+    def calculate_minmaxmean(self, index):
+        m = self.dataset[0][index]
+        h = self.dataset[0][index]
+        sum = 0
+        for i in range(1, len(self.dataset)):
+            sum += self.dataset[i][index]
+            if(self.dataset[i][index] < m):
+                m = self.dataset[i][index]
+            if(self.dataset[i][index] > h):
+                h = self.dataset[i][index]
+        mean = sum / (len(self.dataset))
+        
+        return [m, h, mean]
 
     def calculate_info_categorical(self, index):
         """find different categories and their frequencies. returned list: [[name1, frequency], [name2, freq2]..]"""
