@@ -9,6 +9,7 @@ class View(object):
         self.listener = EventListener()
         self.app = QApplication([])
         self.window = QWidget()
+        self.attribute_checked = 0
       
     def test_(self):
         print('cmb_box signal')
@@ -23,8 +24,9 @@ class View(object):
         label_dataset = QLabel('Datasets')
         label_dataset.setBuddy(cmb_box_dataset)
         btn_import = QPushButton('IMPORT')
-        btn_del_attr = QPushButton('del attr', clicked = self.listener.remove_selected_attr)
+        btn_del_attr = QPushButton('del attr', objectName = 'delbtn', clicked = self.listener.remove_selected_attr, enabled = False)
         #
+
         #btn_import.setStyleSheet("background : yellow")
         pal = btn_import.palette()
         #pal.setColor(QPalette.Active, QPalette.Button, QColor(Qt.yellow))
@@ -108,7 +110,7 @@ class View(object):
 
         for index, item in enumerate(dataset):
             layout_inner = QHBoxLayout(objectName = "top_left_box_inner")
-            check = QCheckBox(checked = False)
+            check = QCheckBox(checked = False, stateChanged = self.listener.attribute_checked)
             btn = QPushButton('attr.' + str(index + 1), objectName = 'attr.' + str(index), flat = True)#at the moment hardcoding name of attributes because no name on the dataset (KDD)
             #using lambda to pass an additional paramether. Have to use i = index or the last variable will be passed to all the lambdas
             btn.clicked.connect(lambda a, i = index : self.listener.attribute_selected(i)) #have to use additional a paramether because connect will pass a boolean variable and if not consumed will be assigned to i and then passed to listener function
@@ -172,6 +174,19 @@ class View(object):
             if(item.isChecked()):
                 indexes.append(item.property('index'))
         return indexes
+    
+    def attr_checked(self, status):
+        if(status == Qt.Checked):
+            self.attribute_checked += 1
+        elif(status == Qt.Unchecked):
+            self.attribute_checked -= 1
+    
+    def set_delbtn_state(self):
+        delbtn = self.window.findChild(QPushButton, name = 'delbtn')
+        if(self.attribute_checked == 0):
+            delbtn.setEnabled(False)
+        else:
+            delbtn.setEnabled(True)
 
 from controller import *
 
@@ -187,12 +202,15 @@ class EventListener(object):
     
     def attribute_selected(self, i : int):
         self.control.attribute_chosen(i)
+
+    def attribute_checked(self, state):
+        self.control.attribute_checked(state)
         
     def submit_window(self):
         self.control.submit_window()
         
-    def remove_selected_attr(self):
-        self.control.attr_removed()
+    def remove_selected_attr(self, state):
+        self.control.attr_removed(state)
    
         
 

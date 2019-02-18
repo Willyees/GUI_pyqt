@@ -26,6 +26,7 @@ class Model(object):
         
 
     def attributes_type(self, dataset_name, new):
+        """attributes types are returned from dataset_name provided if new is set to True. Otherwise are returned from already stored dataset"""
         if(new):
             #load new dataset if new is set to true
             dataset = self.load_dataset(dataset_name)

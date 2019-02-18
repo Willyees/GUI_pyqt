@@ -56,3 +56,7 @@ class Controller(object):
         dataset_attributes = self.model.attributes_type('', False)
         if(dataset_attributes != [""]):
             self.view.set_attr_group(dataset_attributes)
+
+    def attribute_checked(self, state):
+        self.view.attr_checked(state)
+        self.view.set_delbtn_state()
