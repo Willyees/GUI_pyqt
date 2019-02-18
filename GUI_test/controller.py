@@ -46,5 +46,10 @@ class Controller(object):
         attribute_num = attribute[index : ]
         return attribute_num
             
+    def submit_window(self):
+        attr_unselected = self.view.get_unselected_attributes()
+        pass
 
-
+    def attr_removed(self):
+        attrs_selected = self.view.get_attribute_selected()
+        self.model.remove_attributes_dataset(attrs_selected)

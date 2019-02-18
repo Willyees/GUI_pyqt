@@ -1,10 +1,11 @@
 from sklearn import datasets
 import math
+import numpy as np
 
 class Model(object):
     
     def __init__(self):
-        self.dataset = None
+        self.dataset = []
         self.dataset_length = 0
         self.dataset_attr_info = []
         self.attributes_number = 0
@@ -101,3 +102,23 @@ class Model(object):
                 categories.append([self.dataset[i][index], 1])
         return categories
             
+    def remove_attributes_dataset(self, attributes):
+        print(attributes)
+        if isinstance(self.dataset, np.ndarray) and self.dataset.size:
+            new_dataset = []
+            for record in self.dataset:
+                new_dataset.append(np.delete(record, attributes))
+            print(len(new_dataset[0]), new_dataset[0])
+            self.dataset = new_dataset
+
+        elif isinstance(self.dataset, list) and self.dataset:
+            print('list')
+            new_dataset = []
+            for record in self.dataset:
+                new_dataset.append(np.delete(record, attributes))
+            print(len(new_dataset[0]), new_dataset[0]) #Implement case for built in list
+            self.dataset = new_dataset
+            
+        else:
+            print("Error - cant remove from empty dataset")
+        return None
