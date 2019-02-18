@@ -104,10 +104,8 @@ class View(object):
 
     def set_attr_group(self, dataset):
         layout = self.window.findChild(QVBoxLayout, name = "top_left_box")
+        self.clean_layout(layout)
 
-        #layout_inner1 = self.window.findChild(QVBoxLayout, name = "top_left_box_inner1")
-        #layout_inner2 = self.window.findChild(QVBoxLayout, name = "top_left_box_inner2")
-        #layout2 = self.window.findChild(QVBoxLayout, name = "top_left_box2")
         for index, item in enumerate(dataset):
             layout_inner = QHBoxLayout(objectName = "top_left_box_inner")
             check = QCheckBox(checked = False)
@@ -118,7 +116,7 @@ class View(object):
             check.setProperty('index', index) #setting a property index to be retreived when deleting attribute
             layout_inner.addWidget(btn)
             layout_inner.addWidget(QLabel(item))
-            layout.addLayout(layout_inner) #CARE, if call twice it will add it twice! TODO: check if it is prensent and write over, or delete it completely and start again
+            layout.addLayout(layout_inner)
 
             
            
@@ -138,15 +136,15 @@ class View(object):
     def set_attribute_info(self, infos):
         right1 = self.window.findChild(QVBoxLayout, name = 'right1')
         right2 = self.window.findChild(QVBoxLayout, name = 'right2')
-        self.clean_widget(right1)
-        self.clean_widget(right2)
+        self.clean_layout(right1)
+        self.clean_layout(right2)
         
         for item in infos:
             right1.addWidget(QLabel(str(item[0])))
             right2.addWidget(QLabel(str(item[1])))
 
     
-    def clean_widget(self, layout : QLayout):
+    def clean_layout(self, layout : QLayout):
         while(True):
             item = layout.takeAt(0)
             

@@ -26,7 +26,7 @@ class Controller(object):
     def set_dataset(self):
         dataset_str = self.view.get_dataset_chosen()
         if(dataset_str != 'None'):
-            dataset_attributes = self.model.attributes_type(dataset_str)
+            dataset_attributes = self.model.attributes_type(dataset_str, True)
             if(dataset_attributes != [""]):
                 self.view.set_attr_group(dataset_attributes)
     
@@ -53,3 +53,6 @@ class Controller(object):
     def attr_removed(self):
         attrs_selected = self.view.get_attribute_selected()
         self.model.remove_attributes_dataset(attrs_selected)
+        dataset_attributes = self.model.attributes_type('', False)
+        if(dataset_attributes != [""]):
+            self.view.set_attr_group(dataset_attributes)

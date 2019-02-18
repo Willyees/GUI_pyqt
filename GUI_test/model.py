@@ -25,9 +25,11 @@ class Model(object):
             return ""
         
 
-    def attributes_type(self, dataset_name):
-        dataset = self.load_dataset(dataset_name)
-        attribute_types = self.attributes_type_packing(dataset)
+    def attributes_type(self, dataset_name, new):
+        if(new):
+            #load new dataset if new is set to true
+            dataset = self.load_dataset(dataset_name)
+        attribute_types = self.attributes_type_packing(self.dataset)
         return attribute_types
         
     def attributes_type_packing(self, dataset):
@@ -71,7 +73,7 @@ class Model(object):
         for i in range(len(self.dataset)):
             sigma += (self.dataset[i][index] - mean) ** 2
         std_deviation = math.sqrt(sigma / len(self.dataset))
-        return std_deviation
+        return round(std_deviation, 2)
 
     def calculate_minmaxmean(self, index):
         m = self.dataset[0][index]
@@ -85,7 +87,7 @@ class Model(object):
                 h = self.dataset[i][index]
         mean = sum / (len(self.dataset))
         
-        return [m, h, mean]
+        return [round(m, 2), round(h, 2), round(mean, 2)]
 
     def calculate_info_categorical(self, index):
         """find different categories and their frequencies. returned list: [[name1, frequency], [name2, freq2]..]"""
@@ -110,7 +112,6 @@ class Model(object):
                 new_dataset.append(np.delete(record, attributes))
             print(len(new_dataset[0]), new_dataset[0])
             self.dataset = new_dataset
-
         elif isinstance(self.dataset, list) and self.dataset:
             print('list')
             new_dataset = []
@@ -118,7 +119,6 @@ class Model(object):
                 new_dataset.append(np.delete(record, attributes))
             print(len(new_dataset[0]), new_dataset[0]) #Implement case for built in list
             self.dataset = new_dataset
-            
         else:
             print("Error - cant remove from empty dataset")
         return None
