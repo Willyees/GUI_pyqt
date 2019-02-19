@@ -10,7 +10,13 @@ class Model(object):
         self.dataset_attr_info = []
         self.attributes_number = 0
 
-    
+    #def encode_bytes_to_string(self, dataset): #Too slow, going to encode only the needed ones in the controller (~MVC)
+    #    for item in dataset:
+    #        for index in range(len(dataset[0])):
+    #            if(type(item[index]) == bytes):
+    #                dataset[str(item[index], "utf-8")
+
+
     def load_dataset(self, dataset):
         """retreives data and works on it"""
         if(dataset == "KDD99"):
@@ -60,7 +66,7 @@ class Model(object):
         if(self.attribute_single_type(self.dataset[0][index]) == 'Discrete'):#trying with a discrete
             #set info in the right format (each inner list is one row in the view)
             continuous = self.calculate_info_continuous(index)
-            l_formatted = [['minimum', continuous[0]], ['maximum', continuous[1]],['mean', continuous[2]],['standard deviation', continuous[3]]]
+            l_formatted = [['Minimum value:', continuous[0]], ['Maximum value:', continuous[1]],['Mean:', continuous[2]],['Standard Deviation:', continuous[3]]]
             return l_formatted
 
     def calculate_info_continuous(self, index):
@@ -92,7 +98,7 @@ class Model(object):
 
     def calculate_info_categorical(self, index):
         """find different categories and their frequencies. returned list: [[name1, frequency], [name2, freq2]..]"""
-        categories = []
+        categories = [['Value:', 'Frequency:']]
         print(self.dataset[0][index])
         if(self.dataset[0][index] != ""):
             categories.append([self.dataset[0][index], 1])

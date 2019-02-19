@@ -36,7 +36,8 @@ class Controller(object):
         #    print("problem in finding index from label attribute name")
         #    return None
         attribute_info = self.model.calculate_info_attribute(index)
-        self.view.set_attribute_info(attribute_info)
+        self.encode_bytes_to_str(attribute_info)
+        self.view.set_attribute_info(attribute_info)#info modified in previous function
 
     def transform_to_attribute_index(attribute : str):
         digit_index = -1
@@ -60,3 +61,11 @@ class Controller(object):
     def attribute_checked(self, state):
         self.view.attr_checked(state)
         self.view.set_delbtn_state()
+
+    def encode_bytes_to_str(self, items): #not flexible, works only for list of lists
+        print(items)
+        for i1 in range(len(items)):
+            for i2 in range(len(items[i1])):
+                if(type(items[i1][i2]) == bytes):
+                    items[i1][i2] = str(items[i1][i2], 'utf-8')
+      

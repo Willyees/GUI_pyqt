@@ -87,7 +87,7 @@ class View(object):
         main_layout.addLayout(layout_top_upper, 0, 0, 1, 1) #from row, from col, widthspan, to hightspan (1 is no span)
         main_layout.addWidget(top_left_group, 1, 0, 2, 1)
         main_layout.addWidget(right_group, 1, 1)
-        main_layout.addLayout(layout_button, 2, 1)
+        main_layout.addLayout(layout_button, 2, 1, Qt.AlignBottom)
 
         self.window.setLayout(main_layout)
         
