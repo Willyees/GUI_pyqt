@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QLabel, QComboBox, QHBoxLayout, QWidget, QVBoxLayout, QGroupBox, QGridLayout, QPushButton, QSlider, QScrollBar, QLayout, QLayoutItem, QCheckBox, QScrollArea
+from PyQt5.QtWidgets import QApplication, QLabel, QComboBox, QHBoxLayout, QWidget, QVBoxLayout, QGroupBox, QGridLayout, QPushButton, QSlider, QScrollBar, QLayout, QLayoutItem, QCheckBox, QScrollArea, QSizePolicy
 from PyQt5.QtCore import Qt, QObject, pyqtSlot, QSignalMapper
 from PyQt5.QtGui import QPalette, QColor
 
@@ -25,6 +25,7 @@ class View(object):
         label_dataset.setBuddy(cmb_box_dataset)
         btn_import = QPushButton('IMPORT')
         btn_del_attr = QPushButton('del attr', objectName = 'delbtn', clicked = self.listener.remove_selected_attr, enabled = False)
+        btn_test = QPushButton('test', objectName = 'testbtn', clicked = self.test)
         #
 
         #btn_import.setStyleSheet("background : yellow")
@@ -41,13 +42,16 @@ class View(object):
         layout_top_upper.addWidget(cmb_box_dataset)
         layout_top_upper.addWidget(btn_import)
         layout_top_upper.addWidget(btn_del_attr)
+        layout_top_upper.addWidget(btn_test)
         
         #Group top left
         top_left_group = QGroupBox('Top left group', objectName = 'top_left_group')
         layout_top = QVBoxLayout()
         scroll = QScrollArea()
-        #scroll.setStyleSheet('border: 0px solid black')
+        scroll.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding) #horizontal policy -follows size_hint(), vertical policy - takes as much as possible space
+        
         widget_scroll = QWidget()
+        
         layout_top1 = QVBoxLayout(objectName = "top_left_box")
         
         widget_scroll.setLayout(layout_top1)
@@ -83,8 +87,8 @@ class View(object):
         main_layout.addLayout(layout_top_upper, 0, 0, 1, 1)
         main_layout.addWidget(top_left_group, 1, 0)
         main_layout.addWidget(right_group, 1, 3)
-        
         main_layout.addLayout(layout_button, 2, 3)
+
         self.window.setLayout(main_layout)
         
         self.window.show()
@@ -175,6 +179,10 @@ class View(object):
         else:
             delbtn.setEnabled(True)
 
+    def test(self):
+        scroll = self.window.findChild(QScrollArea)
+        print(scroll.viewportSizeHint())
+        print(scroll.sizeHint())
 from controller import *
 
 class EventListener(object):
