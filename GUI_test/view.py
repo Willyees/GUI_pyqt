@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QLabel, QComboBox, QHBoxLayout, QWidget, QVBoxLayout, QGroupBox, QGridLayout, QPushButton, QSlider, QScrollBar, QLayout, QLayoutItem, QCheckBox
+from PyQt5.QtWidgets import QApplication, QLabel, QComboBox, QHBoxLayout, QWidget, QVBoxLayout, QGroupBox, QGridLayout, QPushButton, QSlider, QScrollBar, QLayout, QLayoutItem, QCheckBox, QScrollArea
 from PyQt5.QtCore import Qt, QObject, pyqtSlot, QSignalMapper
 from PyQt5.QtGui import QPalette, QColor
 
@@ -44,42 +44,29 @@ class View(object):
         
         #Group top left
         top_left_group = QGroupBox('Top left group', objectName = 'top_left_group')
-        
+        layout_top = QVBoxLayout()
+        scroll = QScrollArea()
+        #scroll.setStyleSheet('border: 0px solid black')
+        widget_scroll = QWidget()
         layout_top1 = QVBoxLayout(objectName = "top_left_box")
-        #layout_top_inner1 = QVBoxLayout(objectName = "top_left_box_inner1")
-        #layout_top_inner2 = QVBoxLayout(objectName = "top_left_box_inner2")
-        #layout_top2 = QVBoxLayout(objectName = "top_left_box2")
         
-        #scrollBar = QScrollBar(Qt.Vertical, top_left_group)
-        #scrollBar.setValue(20)
-        #layout_top.addWidget(scrollBar)
-        #layout_top1.addLayout(layout_top_inner1)
-        #layout_top1.addLayout(layout_top_inner2)
-        #layout_top.addLayout(layout_top1)
-        #layout_top.addLayout(layout_top2)
-        top_left_group.setLayout(layout_top1)
-
+        widget_scroll.setLayout(layout_top1)
+        scroll.setWidget(widget_scroll)
+        scroll.setWidgetResizable(True)
+        layout_top.addWidget(scroll)
+        top_left_group.setLayout(layout_top)
         
-
         #Group top right
         right_group = QGroupBox('Right group')
-
+        
         layout_right = QHBoxLayout(objectName = 'right_outer')
-            
         layout_right1 = QVBoxLayout(objectName = 'right1')
         layout_right2 = QVBoxLayout(objectName = 'right2')
         layout_right.addLayout(layout_right1)
         layout_right.addLayout(layout_right2)
         
-        attr_name_lbl = QLabel('Attr. name1')
-        attr_type_lbl = QLabel('*type1')
-        #layout_right1.addWidget(attr_name_lbl)
-        #layout_right2.addWidget(attr_type_lbl)
-        
         right_group.setLayout(layout_right)
         
-
-
         #Group button right
         layout_button = QVBoxLayout()
         alg_menu = QComboBox(objectName = 'alg_menu')
