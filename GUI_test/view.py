@@ -45,7 +45,7 @@ class View(object):
         layout_top_upper.addWidget(btn_test)
         
         #Group top left
-        top_left_group = QGroupBox('Top left group', objectName = 'top_left_group')
+        top_left_group = QGroupBox('Attributes', objectName = 'top_left_group')
         layout_top = QVBoxLayout()
         scroll = QScrollArea()
         scroll.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding) #horizontal policy -follows size_hint(), vertical policy - takes as much as possible space
@@ -61,7 +61,7 @@ class View(object):
         top_left_group.setLayout(layout_top)
         
         #Group top right
-        right_group = QGroupBox('Right group')
+        right_group = QGroupBox('Attribute Details')
         
         layout_right = QHBoxLayout(objectName = 'right_outer')
         layout_right1 = QVBoxLayout(objectName = 'right1')
@@ -84,10 +84,10 @@ class View(object):
         layout_button.addWidget(apply_btn)
         #
        
-        main_layout.addLayout(layout_top_upper, 0, 0, 1, 1)
-        main_layout.addWidget(top_left_group, 1, 0)
-        main_layout.addWidget(right_group, 1, 3)
-        main_layout.addLayout(layout_button, 2, 3)
+        main_layout.addLayout(layout_top_upper, 0, 0, 1, 1) #from row, from col, widthspan, to hightspan (1 is no span)
+        main_layout.addWidget(top_left_group, 1, 0, 2, 1)
+        main_layout.addWidget(right_group, 1, 1)
+        main_layout.addLayout(layout_button, 2, 1)
 
         self.window.setLayout(main_layout)
         
@@ -102,7 +102,7 @@ class View(object):
         for index, item in enumerate(dataset):
             layout_inner = QHBoxLayout(objectName = "top_left_box_inner")
             check = QCheckBox(checked = False, stateChanged = self.listener.attribute_checked)
-            btn = QPushButton('attr.' + str(index + 1), objectName = 'attr.' + str(index), flat = True)#at the moment hardcoding name of attributes because no name on the dataset (KDD)
+            btn = QPushButton('attr.' + str(index + 1), objectName = 'attr.' + str(index), flat = False)#at the moment hardcoding name of attributes because no name on the dataset (KDD)
             #using lambda to pass an additional paramether. Have to use i = index or the last variable will be passed to all the lambdas
             btn.clicked.connect(lambda a, i = index : self.listener.attribute_selected(i)) #have to use additional a paramether because connect will pass a boolean variable and if not consumed will be assigned to i and then passed to listener function
             layout_inner.addWidget(check)

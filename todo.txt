@@ -2,5 +2,4 @@
 -~use a label under the attribute left group buttons so it is fully coloured when pressed
 -scrollable groups that wont go outside the screen
 -figure out how to add attribute names into the db
--center the attribute name on left group for small window sizes
 -resize attribute details box, so it is not as big as the left group box
