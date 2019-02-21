@@ -61,10 +61,10 @@ class View(object):
         right_group = QGroupBox('Attribute Details')
         
         layout_right = QHBoxLayout(objectName = 'right_outer')
-        layout_right1 = QVBoxLayout(objectName = 'right1')
-        layout_right2 = QVBoxLayout(objectName = 'right2')
-        layout_right.addLayout(layout_right1)
-        layout_right.addLayout(layout_right2)
+        #layout_right1 = QVBoxLayout(objectName = 'right1')
+        #layout_right2 = QVBoxLayout(objectName = 'right2')
+        #layout_right.addLayout(layout_right1)
+        #layout_right.addLayout(layout_right2)
         
         right_group.setLayout(layout_right)
         
@@ -124,14 +124,19 @@ class View(object):
             return 'None'
 
     def set_attribute_info(self, infos):
-        right1 = self.window.findChild(QVBoxLayout, name = 'right1')
-        right2 = self.window.findChild(QVBoxLayout, name = 'right2')
-        self.clean_layout(right1)
-        self.clean_layout(right2)
+        right = self.window.findChild(QHBoxLayout, name = 'right_outer')
+        #right1 = self.window.findChild(QVBoxLayout, name = 'right1')
+        #right2 = self.window.findChild(QVBoxLayout, name = 'right2')
+        #self.clean_layout(right1)
+        #self.clean_layout(right2)
+        self.clean_layout(right)
         
-        for item in infos:
-            right1.addWidget(QLabel(str(item[0])))
-            right2.addWidget(QLabel(str(item[1])))
+        for i_in in range(len(infos[0])):
+            layout = QVBoxLayout()
+            for i_out in range(len(infos)):
+                layout.addWidget(QLabel(str(infos[i_out][i_in])))
+                #right2.addWidget(QLabel(str(item[1])))
+            right.addLayout(layout)
 
     
     def clean_layout(self, layout : QLayout):
@@ -143,6 +148,7 @@ class View(object):
             child_l = item.layout() #if item is a layout, it is returned as layout. if not as None => is a widget
             if(child_l != None):
                 self.clean_layout(child_l)
+                del child_l
                 
             widget = item.widget()
             if(widget != None):

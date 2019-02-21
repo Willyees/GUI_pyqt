@@ -42,19 +42,23 @@ class Model(object):
     def attributes_type_packing(self, dataset):
         #using the '.' symbol to undestand if float or integer
         attribute_types = []
-        for item in dataset[0]: #only the first row
-            attribute_types.append(self.attribute_single_type(item))
-            #print(item)
+        for index, item in enumerate(dataset[0]): #only the first row
+            attribute_types.append(self.attribute_single_type(item, index))
         return attribute_types
 
     
-    def attribute_single_type(self, item):
+    def attribute_single_type(self, item, index):
         #used to return each attribute as a single type. It can be reused in other functions
         if(str(item) == ""):
             print("Attribute value is incorrect: empty")
             return ''
 
         if ((str(item)).replace('.', '').isdigit()):
+            print(index)
+            if(int(item) == 1 or int(item) == 0):
+                if(self.attribute_check_if_binary(index)):
+                    return ('Binary')
+
             if (str(item).find('.') == -1):
                 return ('Discrete')
             else:
@@ -62,16 +66,55 @@ class Model(object):
         else:
             return ('Categorical')
         
+    def attribute_check_if_binary(self, index):
+        if(type(self.dataset.data[0][index]) == float):
+            f = 0.0
+            t = 1.0
+        elif(type(self.dataset.data[0][index]) == int):
+            f = 0
+            t = 1
+        else:
+            return False
+
+        for item in self.dataset.data:
+            if(item[index] != f and item[index] != t):
+                return False
+        return True
+
 
     def calculate_info_attribute(self, index):
         #todo:check that first is not empty (missing) and find next proper one. Not sure if I should check against "" string only
-        if(self.attribute_single_type(self.dataset.data[0][index]) == 'Categorical'):
+        attr_type = self.attribute_single_type(self.dataset.data[0][index], index)
+        if(attr_type == 'Categorical'):
             return self.calculate_info_categorical(index)
-        if(self.attribute_single_type(self.dataset.data[0][index]) == 'Discrete'):#trying with a discrete
+        elif(attr_type == 'Discrete' or attr_type == 'Continuous'):#trying with a discrete
             #set info in the right format (each inner list is one row in the view)
             continuous = self.calculate_info_continuous(index)
             l_formatted = [['Minimum value:', continuous[0]], ['Maximum value:', continuous[1]],['Mean:', continuous[2]],['Standard Deviation:', continuous[3]]]
             return l_formatted
+        elif(attr_type == 'Binary'):
+            return self.calculate_info_binary(index)
+        else:
+            print("Attribute is not supported")
+            return ''
+
+    def calculate_info_binary(self, index):
+        categories = [['Value:', 'Frequency:', 'Percentage']]
+        
+        if(self.dataset.data[0][index] != ""):
+            categories.append([self.dataset.data[0][index], 1])
+        for i in range(1, self.dataset.size):
+            for item in categories:
+                if(self.dataset.data[i][index] != "" and self.dataset.data[i][index] == item[0]):
+                    item[1] += 1
+                    break
+            else:
+                categories.append([self.dataset.data[i][index], 1])
+
+        for i in range(1, len(categories)):
+            categories[i].append(round(categories[i][1] / self.dataset.size * 100, 2))
+        return categories
+        
 
     def calculate_info_continuous(self, index):
         #min, max, mean, std deviation
@@ -103,7 +146,7 @@ class Model(object):
     def calculate_info_categorical(self, index):
         """find different categories and their frequencies. returned list: [[name1, frequency], [name2, freq2]..]"""
         categories = [['Value:', 'Frequency:']]
-        print(self.dataset.data[0][index])
+        
         if(self.dataset.data[0][index] != ""):
             categories.append([self.dataset.data[0][index], 1])
         for i in range(1, self.dataset.size):
@@ -138,7 +181,7 @@ class Model(object):
     def attr_nominal_to_binary(self, indexes):
         """transform nominal attributes given from the indexes into binaries"""
         #for index in indexes:
-        #if (self.attribute_single_type(self.dataset.data[0][indexes]) == 'Categorical'):
+        #if (self.attribute_single_type(self.dataset.data[0][indexes], index) == 'Categorical'):
         sets = self.sets_of_nominal_attributes(indexes)
         self.attr_nominal_to_binary_add_attr(sets, indexes)
         self.remove_attributes_dataset(indexes)
