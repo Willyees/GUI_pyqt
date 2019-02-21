@@ -74,7 +74,7 @@ class Model(object):
             f = 0
             t = 1
         else:
-            return False
+            return False #only working for float and int
 
         for item in self.dataset.data:
             if(item[index] != f and item[index] != t):
@@ -99,7 +99,7 @@ class Model(object):
             return ''
 
     def calculate_info_binary(self, index):
-        categories = [['Value:', 'Frequency:', 'Percentage']]
+        categories = [['Value:', 'Frequency:', 'Percentage:']]
         
         if(self.dataset.data[0][index] != ""):
             categories.append([self.dataset.data[0][index], 1])
@@ -112,7 +112,7 @@ class Model(object):
                 categories.append([self.dataset.data[i][index], 1])
 
         for i in range(1, len(categories)):
-            categories[i].append(round(categories[i][1] / self.dataset.size * 100, 2))
+            categories[i].append(round(categories[i][1] / self.dataset.size * 100, 3))
         return categories
         
 
@@ -187,6 +187,11 @@ class Model(object):
         self.remove_attributes_dataset(indexes)
         
 
+    def set_attr_names_nominal_to_binary(self, indexes, sets):
+        #indexes is used to retreive the name of the original attribute so it can be set as -> xes: port = http
+        for attr in sets:
+            for item in attr:
+                self.dataset.attr_names = '= ' + str(item)
 
     def resize_dataset_add_attributes(self, list):
         """resize the dataset to add all the items in the list, works on jagged lists and list of lists"""
@@ -209,11 +214,11 @@ class Model(object):
                 for el_set in sets[i_set]:
                     if(self.dataset.data[i1][index] == el_set):
                         self.dataset.data[i1][current_index] = 1
+                        
                     #no need to else, because new attributes have been set to 0 previously. Only switch the ones to 1.
                     #else:
                     #    self.dataset.data[i1][current_index] = 0
                     #current_index += 1
-
 
     def sets_of_nominal_attributes(self, indexes):
         """returns a list of sets of unique values are taken from each attributes passed (as indexes of the dataset)"""
