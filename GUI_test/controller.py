@@ -68,4 +68,9 @@ class Controller(object):
             for i2 in range(len(items[i1])):
                 if(type(items[i1][i2]) == bytes):
                     items[i1][i2] = str(items[i1][i2], 'utf-8')
+
+
+    def test_(self):
+        self.model.attr_nominal_to_binary([1])
       
+    

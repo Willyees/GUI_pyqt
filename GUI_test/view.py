@@ -12,7 +12,7 @@ class View(object):
         self.attribute_checked = 0
       
     def test_(self):
-        print('cmb_box signal')
+        self.listener.test_()
 
     def startView(self):
         main_layout = QGridLayout()
@@ -25,7 +25,7 @@ class View(object):
         label_dataset.setBuddy(cmb_box_dataset)
         btn_import = QPushButton('IMPORT')
         btn_del_attr = QPushButton('del attr', objectName = 'delbtn', clicked = self.listener.remove_selected_attr, enabled = False)
-        btn_test = QPushButton('test', objectName = 'testbtn', clicked = self.test)
+        btn_test = QPushButton('test', objectName = 'testbtn', clicked = self.test_)
         #
 
         #btn_import.setStyleSheet("background : yellow")
@@ -179,10 +179,7 @@ class View(object):
         else:
             delbtn.setEnabled(True)
 
-    def test(self):
-        scroll = self.window.findChild(QScrollArea)
-        print(scroll.viewportSizeHint())
-        print(scroll.sizeHint())
+    
 from controller import *
 
 class EventListener(object):
@@ -204,8 +201,11 @@ class EventListener(object):
     def submit_window(self):
         self.control.submit_window()
         
-    def remove_selected_attr(self, state):
-        self.control.attr_removed(state)
+    def remove_selected_attr(self):
+        self.control.attr_removed()
+
+    def test_(self):
+        self.control.test_()
    
         
 
