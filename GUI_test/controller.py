@@ -61,6 +61,7 @@ class Controller(object):
     def attribute_checked(self, state):
         self.view.attr_checked(state)
         self.view.set_delbtn_state()
+        self.view.set_ntbbtn_state()
 
     def encode_bytes_to_str(self, items): #not flexible, works only for list of lists
         print(items)
@@ -70,7 +71,9 @@ class Controller(object):
                     items[i1][i2] = str(items[i1][i2], 'utf-8')
 
 
-    def test_(self):
-        self.model.attr_nominal_to_binary([1])
-      
-    
+    def nominal_to_binary(self):
+        attr_checked = self.view.get_attribute_selected()
+        self.model.attr_nominal_to_binary(attr_checked) #also removing attribute interally (in model)
+        dataset_attributes = self.model.attributes_type('', False)
+        if(dataset_attributes != [""]):
+            self.view.set_attr_group(dataset_attributes)

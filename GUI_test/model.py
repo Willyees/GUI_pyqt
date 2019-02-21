@@ -116,19 +116,17 @@ class Model(object):
         return categories
             
     def remove_attributes_dataset(self, attributes):
-        print(attributes)
         if isinstance(self.dataset.data, np.ndarray):
-            new_dataset = []
-            for record in self.dataset.data:
-                new_dataset.append(np.delete(record, attributes))
-            print(len(new_dataset[0]), new_dataset[0])
-            self.dataset.data = new_dataset
+            self.dataset.data = np.delete(self.dataset.data, attributes, 1)
             self.dataset.set_properties()
+            print('attributes :', attributes, 'deleted')
+            print(self.dataset.attr_size, self.dataset.data[0])
+            
         elif isinstance(self.dataset.data, list):
             print('list')
-            new_dataset = []
+            new_dataset = [] 
             for record in self.dataset.data:
-                new_dataset.append(np.delete(record, attributes))
+                new_dataset.append(np.delete(record, attributes)) #very slow method to create new dataset
             print(len(new_dataset[0]), new_dataset[0])
             self.dataset.data = new_dataset
             self.dataset.set_properties()
@@ -143,12 +141,10 @@ class Model(object):
         #if (self.attribute_single_type(self.dataset.data[0][indexes]) == 'Categorical'):
         sets = self.sets_of_nominal_attributes(indexes)
         self.attr_nominal_to_binary_add_attr(sets, indexes)
-        print(self.dataset.data[0])
-        print(self.dataset.data[1])
-        print(self.dataset.data[2])
-        print(self.dataset.data[732])
-                #create new attribute for each set value
-                #set 0 or 1 for attribute value in newly created slots
+        self.remove_attributes_dataset(indexes)
+        
+
+
     def resize_dataset_add_attributes(self, list):
         """resize the dataset to add all the items in the list, works on jagged lists and list of lists"""
         elements = sum(len(item) for item in list)

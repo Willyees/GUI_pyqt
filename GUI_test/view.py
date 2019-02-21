@@ -11,9 +11,6 @@ class View(object):
         self.window = QWidget()
         self.attribute_checked = 0
       
-    def test_(self):
-        self.listener.test_()
-
     def startView(self):
         main_layout = QGridLayout()
         
@@ -25,7 +22,7 @@ class View(object):
         label_dataset.setBuddy(cmb_box_dataset)
         btn_import = QPushButton('IMPORT')
         btn_del_attr = QPushButton('del attr', objectName = 'delbtn', clicked = self.listener.remove_selected_attr, enabled = False)
-        btn_test = QPushButton('test', objectName = 'testbtn', clicked = self.test_)
+        btn_test = QPushButton('test', objectName = 'ntbbtn', clicked = self.listener.nominal_to_binary, enabled = False)
         #
 
         #btn_import.setStyleSheet("background : yellow")
@@ -179,6 +176,12 @@ class View(object):
         else:
             delbtn.setEnabled(True)
 
+    def set_ntbbtn_state(self):
+        delbtn = self.window.findChild(QPushButton, name = 'ntbbtn')
+        if(self.attribute_checked == 0):
+            delbtn.setEnabled(False)
+        else:
+            delbtn.setEnabled(True)
     
 from controller import *
 
@@ -203,9 +206,9 @@ class EventListener(object):
         
     def remove_selected_attr(self):
         self.control.attr_removed()
-
-    def test_(self):
-        self.control.test_()
+    
+    def nominal_to_binary(self):
+        self.control.nominal_to_binary()
    
         
 
