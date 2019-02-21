@@ -54,16 +54,20 @@ class Model(object):
             return ''
 
         if ((str(item)).replace('.', '').isdigit()):
-            print(index)
+            
             if(int(item) == 1 or int(item) == 0):
                 if(self.attribute_check_if_binary(index)):
+                    #print('Binary')
                     return ('Binary')
 
             if (str(item).find('.') == -1):
-                return ('Discrete')
+                    #print('Discrete')
+                    return ('Discrete')
             else:
+                #print('Continuous')
                 return ('Continuous')
         else:
+            print('Categorical')
             return ('Categorical')
         
     def attribute_check_if_binary(self, index):
@@ -179,13 +183,24 @@ class Model(object):
         return None
 
     def attr_nominal_to_binary(self, indexes):
-        """transform nominal attributes given from the indexes into binaries"""
-        #for index in indexes:
-        #if (self.attribute_single_type(self.dataset.data[0][indexes], index) == 'Categorical'):
-        sets = self.sets_of_nominal_attributes(indexes)
-        self.attr_nominal_to_binary_add_attr(sets, indexes)
-        self.remove_attributes_dataset(indexes)
+        """transform nominal attributes given from the indexes into binaries, returns true if at least one attribute has been transformed"""
+        categ_flag = False
+        #take away the indexes of not categorical attributes
+        no_categ_index = [] #stores the index of the indexes to be deleted
+        print(indexes)
+        for index in indexes[:]:
+            if (self.attribute_single_type(self.dataset.data[0][index], index) == 'Categorical'):
+                categ_flag = True #flag used to signal the execution of at least one transformation (view needs to be refreshed)
+            else:
+                indexes.remove(index)
+                print("Attributes selected are not categorical types")
         
+        print(indexes)
+        if (categ_flag):
+            sets = self.sets_of_nominal_attributes(indexes)
+            self.attr_nominal_to_binary_add_attr(sets, indexes)
+            self.remove_attributes_dataset(indexes)
+        return categ_flag
 
     def set_attr_names_nominal_to_binary(self, indexes, sets):
         #indexes is used to retreive the name of the original attribute so it can be set as -> xes: port = http

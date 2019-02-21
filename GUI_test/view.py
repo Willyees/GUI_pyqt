@@ -22,7 +22,7 @@ class View(object):
         label_dataset.setBuddy(cmb_box_dataset)
         btn_import = QPushButton('IMPORT')
         btn_del_attr = QPushButton('del attr', objectName = 'delbtn', clicked = self.listener.remove_selected_attr, enabled = False)
-        btn_test = QPushButton('test', objectName = 'ntbbtn', clicked = self.listener.nominal_to_binary, enabled = False)
+        btn_ntb = QPushButton('Transform to binary', objectName = 'ntbbtn', clicked = self.listener.nominal_to_binary, enabled = False)
         #
 
         #btn_import.setStyleSheet("background : yellow")
@@ -39,7 +39,7 @@ class View(object):
         layout_top_upper.addWidget(cmb_box_dataset)
         layout_top_upper.addWidget(btn_import)
         layout_top_upper.addWidget(btn_del_attr)
-        layout_top_upper.addWidget(btn_test)
+        layout_top_upper.addWidget(btn_ntb)
         
         #Group top left
         top_left_group = QGroupBox('Attributes', objectName = 'top_left_group')
@@ -105,7 +105,7 @@ class View(object):
             layout_inner.addWidget(check)
             check.setProperty('index', index) #setting a property index to be retreived when deleting attribute
             layout_inner.addWidget(btn)
-            layout_inner.addWidget(QLabel(item))
+            layout_inner.addWidget(QLabel(item, objectName = 'type_attr.' + str(index)))
             layout.addLayout(layout_inner)
 
             
@@ -122,6 +122,7 @@ class View(object):
             return dataset.currentText()
         else:
             return 'None'
+    
 
     def set_attribute_info(self, infos):
         right = self.window.findChild(QHBoxLayout, name = 'right_outer')
@@ -140,6 +141,7 @@ class View(object):
 
     
     def clean_layout(self, layout : QLayout):
+        print('clear layout')
         while(True):
             item = layout.takeAt(0)
             
@@ -152,7 +154,6 @@ class View(object):
                 
             widget = item.widget()
             if(widget != None):
-                print(widget.text())
                 widget.deleteLater()
                 
             del item

@@ -74,7 +74,7 @@ class Controller(object):
 
     def nominal_to_binary(self):
         attr_checked = self.view.get_attribute_selected()
-        self.model.attr_nominal_to_binary(attr_checked) #also removing attribute interally (in model)
-        dataset_attributes = self.model.attributes_type('', False)
-        if(dataset_attributes != [""]):
-            self.view.set_attr_group(dataset_attributes)
+        if(self.model.attr_nominal_to_binary(attr_checked)): #also removing attribute interally (in model) if it is a category attribute
+            dataset_attributes = self.model.attributes_type('', False)
+            if(dataset_attributes != [""]):
+                self.view.set_attr_group(dataset_attributes)
