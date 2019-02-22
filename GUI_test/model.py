@@ -7,7 +7,8 @@ class Model(object):
     
     def __init__(self):
         self.dataset = Dataset()
-        self.datasets_location = {}
+        self.datasets_location = dict()
+        self.datasets_location['KDD99'] = 'inner'
         
     #def encode_bytes_to_string(self, dataset): #Too slow, going to encode only the needed ones in the controller (~MVC)
     #    for item in dataset:
@@ -25,17 +26,33 @@ class Model(object):
         if not(path in self.datasets_location):
             self.datasets_location[name] = path#name is key in dictionary
         else:
-            print("dataset directory provided already contains a dataset")
-
+            print("dataset directory provided already contains a dataset, did not add it")
+    
     def check_existence_dataset_file(self, path):
         """check that dataset path is a file, if not remove it from the datasets_directory if present"""
         if not(os.path.isfile(path)):
-            print("No file matching the directory specified")
+            print("No file matching the directory specified for ", path)
             name = self.dataset_path_to_name(path)
-            if (self.datasets_location.get(name) == None):
+            if (self.datasets_location.get(name) != None and name != 'inner'):#do not delete inner elements (loaded interally like KDD99)
                 del self.datasets_location[name]
             return False
         return True
+
+    def transform_to_correct_type(self, str):
+        type = self.attribute_single_type(str)
+        if(type == "Categorical"):
+            return str
+        elif(type == "Continuous"):
+            return float(str)
+        elif(type == "Discrete"):
+            return int(str)
+
+    def get_dataset_names(self):
+        return list(self.datasets_location.keys())
+
+    def get_dataset_current_name(self):
+        print('current dataset:', self.dataset.name)
+        return self.dataset.name
 
     def read_dataset(self, path):
         if not(self.check_existence_dataset_file(path)): #skipping the open file, if this function already checked that file do not exists
@@ -51,11 +68,15 @@ class Model(object):
         for line in file.readlines():
             dataset.append(line.replace('\n', '').split(','))
         file.close()
-
-        dataset = np.asarray(dataset) #no dt type specified
+        #setting the type of input data following rules utilized to check type of attributes
+        for i in range(len(dataset)):
+            dataset[i] = [self.transform_to_correct_type(x) for x in dataset[i]]
+        dataset = np.asarray(dataset, dtype = np.dtype(object))
         self.dataset.data = dataset
         self.dataset.set_properties() #some properties not set, still referring to old dataset
+        self.dataset.set_name_path(self.dataset_path_to_name(path), path)
         self.set_dataset_location(path)
+        
         print(self.datasets_location)
         print(self.dataset.data)
         return True
@@ -69,22 +90,21 @@ class Model(object):
             self.attr_size = len(kdd.data[0])
             self.dataset.data = kdd.data
             self.dataset.set_properties()
-            return self.dataset.data
-        else:
-            self.read_dataset(self.datasets_location[dataset_name])
+            self.dataset.set_name_path('KDD99', 'inner')
+            self.datasets_location['KDD99'] = 'inner'
             
+        else:
+            if(dataset_name in self.datasets_location): #only execute if the dataset name is present in the map
+                self.read_dataset(self.datasets_location[dataset_name])
+                
         
     #def get_directory_dataset(self, name):
     #    if(name in self.datasets_location):
     #        return self.datasets_location[name]
     #    else:
     #        return ''
-    def attributes_type(self, new, dataset_name):
-        """attributes types are returned from dataset_name provided if new is set to True. Otherwise are returned from already stored dataset"""
-        if(new and dataset_name != ''):
-            #load new dataset if new is set to true
-            self.dataset.data = self.load_dataset(dataset_name)
-            self.dataset.set_properties()
+    def attributes_type(self):
+        """attributes types are returned from current dataset"""
         self.dataset.attr_types = self.attributes_type_packing(self.dataset.data)
         return self.dataset.attr_types
         
@@ -96,18 +116,18 @@ class Model(object):
         return attribute_types
 
     
-    def attribute_single_type(self, item, index):
-        #used to return each attribute as a single type. It can be reused in other functions
+    def attribute_single_type(self, item, index = -1):
+        #used to return each attribute as a single type. It can be reused in other functions. Can be utilized without binary return usign -1 index
         if(str(item) == ""):
             print("Attribute value is incorrect: empty")
             return ''
 
         if ((str(item)).replace('.', '').isdigit()):
             
-            if(int(item) == 1 or int(item) == 0):
-                if(self.attribute_check_if_binary(index)):
-                    #print('Binary')
-                    return ('Binary')
+            #if(int(item) == 1 or int(item) == 0):
+            if(index != -1 and self.attribute_check_if_binary(index)):
+                #print('Binary')
+                return ('Binary')
 
             if (str(item).find('.') == -1):
                     #print('Discrete')
@@ -300,7 +320,6 @@ class Dataset(object):
         self.attr_types = []
         self.attr_size = 0
         self.size = 0
-        #not usign yet
         self.name = ''
         self.path = ''
 
@@ -309,3 +328,7 @@ class Dataset(object):
             self.attr_size = len(self.data[0])
             self.size = len(self.data)
             #to do add methods to fit attrnames and types
+
+    def set_name_path(self, name, path):
+        self.name = name
+        self.path = path

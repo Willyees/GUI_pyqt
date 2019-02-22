@@ -15,7 +15,10 @@ class Controller(object):
 
 
     def startView(self):
-        self.view.startView()
+        self.view.startView(self.model.get_dataset_names())
+        #set available dataset internally (KDD at the moment)
+        #self.view.set_cmbbox_datasets(self.model.get_dataset_names(), 'a')
+        self.view.execute()
 
     def submit_form(self):
         print(self.view.get_info())
@@ -25,11 +28,16 @@ class Controller(object):
 
     def set_dataset(self):
         dataset_str = self.view.get_dataset_chosen()
-        if(dataset_str != 'None'):
-            dataset_attributes = self.model.attributes_type(True, dataset_str)
-            if(dataset_attributes != [""]):
-                self.view.set_attr_group(dataset_attributes)
-    
+        if(dataset_str != 'None' and dataset_str != self.model.get_dataset_current_name() and dataset_str != ''):
+            self.model.load_dataset(dataset_str)
+            self.show_dataset_attributes()
+            
+    def show_dataset_attributes(self):
+        """get and show on view the current dataset attributes"""
+        dataset_attributes = self.model.attributes_type()
+        if(dataset_attributes != [""]):
+            self.view.set_attr_group(dataset_attributes)
+
     def attribute_chosen(self, index):
         #index = self.transform_to_attribute_index(attribute)
         #if(index == -1):
@@ -55,9 +63,7 @@ class Controller(object):
     def attr_removed(self):
         attrs_selected = self.view.get_attribute_selected()
         self.model.remove_attributes_dataset(attrs_selected)
-        dataset_attributes = self.model.attributes_type(False)
-        if(dataset_attributes != [""]):
-            self.view.set_attr_group(dataset_attributes)
+        self.show_dataset_attributes()
 
     def attribute_checked(self, state):
         self.view.attr_checked(state)
@@ -75,14 +81,15 @@ class Controller(object):
     def nominal_to_binary(self):
         attr_checked = self.view.get_attribute_selected()
         if(self.model.attr_nominal_to_binary(attr_checked)): #also removing attribute interally (in model) if it is a category attribute
-            dataset_attributes = self.model.attributes_type(False)
-            if(dataset_attributes != [""]):
-                self.view.set_attr_group(dataset_attributes)
+            self.show_dataset_attributes()
 
     def import_dataset(self):
         dataset_path = self.view.get_file_selected(filter = 'Dataset files (*.csv)', directory = 'C:\\Users\\User\\Documents')
         if(dataset_path): #check that user selected a file
             self.model.read_dataset(dataset_path[0])
+            self.show_dataset_attributes()
+            names = self.model.get_dataset_names()
+            self.view.set_cmbbox_datasets(names, self.model.get_dataset_current_name())
             #read the file in the model and set it as dataset
             #store file location along with the name in model
             #update cmbbox view with the new dataset name

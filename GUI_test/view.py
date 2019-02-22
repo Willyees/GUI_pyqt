@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QApplication, QLabel, QComboBox, QHBoxLayout, QWidget, QVBoxLayout, QGroupBox, QGridLayout, QPushButton, QSlider, QScrollBar, QLayout, QLayoutItem, QCheckBox, QScrollArea, QSizePolicy, QFileDialog
-from PyQt5.QtCore import Qt, QObject, pyqtSlot, QSignalMapper, QStringListModel
-from PyQt5.QtGui import QPalette, QColor
+from PyQt5.QtCore import Qt, QObject, pyqtSlot, QSignalMapper, QStringListModel, QModelIndex
+from PyQt5.QtGui import QPalette, QColor, QStandardItemModel
 
 
 class View(object):
@@ -11,13 +11,18 @@ class View(object):
         self.window = QWidget()
         self.attribute_checked = 0
       
-    def startView(self):
+    def startView(self, dataset_names):
         main_layout = QGridLayout()
         
         #upper top left
-        cmb_box_dataset = QComboBox(objectName = 'cmb_box_dataset', currentIndexChanged = self.listener.dataset_chosen_changed)
-        #cmb_box_dataset.currentIndexChanged.connect(self.test_cmb)
-        cmb_box_dataset.addItems(['KDD99', 'KDD99'])
+        cmb_box_dataset = QComboBox(objectName = 'cmb_box_dataset')
+        cmb_box_dataset.addItem('')
+        model : QStandardItemModel = cmb_box_dataset.model()
+        firstIndex : QModelIndex = model.index(0, cmb_box_dataset.modelColumn(), cmb_box_dataset.rootModelIndex())
+        firstItem = model.itemFromIndex(firstIndex)
+        firstItem.setSelectable(False)
+        cmb_box_dataset.addItems(dataset_names)
+        cmb_box_dataset.currentIndexChanged.connect(self.listener.dataset_chosen_changed)#connecting after adding items, so it wont trigger the signal
         label_dataset = QLabel('Datasets')
         label_dataset.setBuddy(cmb_box_dataset)
         btn_import = QPushButton('IMPORT', clicked = self.listener.import_dataset)
@@ -91,9 +96,10 @@ class View(object):
 
         self.window.setLayout(main_layout)
         
+    
+    def execute(self):
         self.window.show()
         self.app.exec_()
-    
 
     def set_attr_group(self, dataset):
         layout = self.window.findChild(QVBoxLayout, name = "top_left_box")
@@ -112,7 +118,11 @@ class View(object):
             layout.addLayout(layout_inner)
 
             
-           
+    def set_cmbbox_datasets(self, dataset_names, name_current):
+        cmbbox : QComboBox = self.window.findChild(QComboBox, name = 'cmb_box_dataset')
+        cmbbox.clear()
+        cmbbox.addItems(dataset_names)
+        cmbbox.setCurrentText(name_current)
         
     def add_lbl_test(self, widget, a, index = 2):
         """create labels - used for DEBUG purposes"""
@@ -120,8 +130,11 @@ class View(object):
             widget.addWidget(QLabel(' ' * index + a))
         
     def get_dataset_chosen(self):
-        dataset = self.window.findChild(QComboBox, name = 'cmb_box_dataset')
+        dataset : QComboBox = self.window.findChild(QComboBox, name = 'cmb_box_dataset')
         if(dataset != None):
+            #remove first empty option from datasets cmbbox (is set to empty initially)
+            if(dataset.itemText(0) == ''):
+                dataset.removeItem(0)
             return dataset.currentText()
         else:
             return 'None'
@@ -233,8 +246,6 @@ class EventListener(object):
     def import_dataset(self):
         print('import btn pressed')
         self.control.import_dataset()
-        pass
-        
 
 
 
