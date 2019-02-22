@@ -1,38 +1,87 @@
 from sklearn import datasets
 import math
 import numpy as np
+import os.path
 
 class Model(object):
     
     def __init__(self):
         self.dataset = Dataset()
+        self.datasets_location = {}
         
     #def encode_bytes_to_string(self, dataset): #Too slow, going to encode only the needed ones in the controller (~MVC)
     #    for item in dataset:
     #        for index in range(len(dataset[0])):
     #            if(type(item[index]) == bytes):
     #                dataset[str(item[index], "utf-8")
+    def dataset_path_to_name(self, path):
+        path_splitted = path.split('/')
+        name = (path_splitted[len(path_splitted) - 1]).split('.')[0] #last part of directory, less the extension
+        return name
 
+    def set_dataset_location(self, path):
+        """set the name and location of the dataset in the map"""
+        name = self.dataset_path_to_name(path)
+        if not(path in self.datasets_location):
+            self.datasets_location[name] = path#name is key in dictionary
+        else:
+            print("dataset directory provided already contains a dataset")
 
-    def load_dataset(self, dataset):
+    def check_existence_dataset_file(self, path):
+        """check that dataset path is a file, if not remove it from the datasets_directory if present"""
+        if not(os.path.isfile(path)):
+            print("No file matching the directory specified")
+            name = self.dataset_path_to_name(path)
+            if (self.datasets_location.get(name) == None):
+                del self.datasets_location[name]
+            return False
+        return True
+
+    def read_dataset(self, path):
+        if not(self.check_existence_dataset_file(path)): #skipping the open file, if this function already checked that file do not exists
+            return False
+        #use try catch, in case has been removed in the time being
+        try:
+            file = open(path, 'r')
+        except IOError:
+            print("No file present!")
+            return False
+
+        dataset = []
+        for line in file.readlines():
+            dataset.append(line.replace('\n', '').split(','))
+        file.close()
+
+        dataset = np.asarray(dataset) #no dt type specified
+        self.dataset.data = dataset
+        self.dataset.set_properties() #some properties not set, still referring to old dataset
+        self.set_dataset_location(path)
+        print(self.datasets_location)
+        print(self.dataset.data)
+        return True
+
+    def load_dataset(self, dataset_name):
         """retreives data and works on it"""
-        if(dataset == "KDD99"):
+        #find dataset directory in map
+        if(dataset_name.upper() == "KDD99"): #special case. Using sklearn lib to load it
             kdd = datasets.fetch_kddcup99()
             self.dataset.size = len(kdd.data)
             self.attr_size = len(kdd.data[0])
             self.dataset.data = kdd.data
             self.dataset.set_properties()
-            #self.attr_nominal_to_binary([1,3])
-            
             return self.dataset.data
         else:
-            print("Error in retreiving dataset: " + dataset)
-            return ""
+            self.read_dataset(self.datasets_location[dataset_name])
+            
         
-
-    def attributes_type(self, dataset_name, new):
+    #def get_directory_dataset(self, name):
+    #    if(name in self.datasets_location):
+    #        return self.datasets_location[name]
+    #    else:
+    #        return ''
+    def attributes_type(self, new, dataset_name):
         """attributes types are returned from dataset_name provided if new is set to True. Otherwise are returned from already stored dataset"""
-        if(new):
+        if(new and dataset_name != ''):
             #load new dataset if new is set to true
             self.dataset.data = self.load_dataset(dataset_name)
             self.dataset.set_properties()
@@ -87,7 +136,7 @@ class Model(object):
 
 
     def calculate_info_attribute(self, index):
-        #todo:check that first is not empty (missing) and find next proper one. Not sure if I should check against "" string only
+        #to do:check that first is not empty (missing) and find next proper one. Not sure if I should check against "" string only
         attr_type = self.attribute_single_type(self.dataset.data[0][index], index)
         if(attr_type == 'Categorical'):
             return self.calculate_info_categorical(index)
@@ -251,9 +300,12 @@ class Dataset(object):
         self.attr_types = []
         self.attr_size = 0
         self.size = 0
+        #not usign yet
+        self.name = ''
+        self.path = ''
 
     def set_properties(self):
         if len(self.data) != 0:
             self.attr_size = len(self.data[0])
             self.size = len(self.data)
-            #todo add methods to fit attrnames and types
+            #to do add methods to fit attrnames and types

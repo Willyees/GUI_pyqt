@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QApplication, QLabel, QComboBox, QHBoxLayout, QWidget, QVBoxLayout, QGroupBox, QGridLayout, QPushButton, QSlider, QScrollBar, QLayout, QLayoutItem, QCheckBox, QScrollArea, QSizePolicy
-from PyQt5.QtCore import Qt, QObject, pyqtSlot, QSignalMapper
+from PyQt5.QtWidgets import QApplication, QLabel, QComboBox, QHBoxLayout, QWidget, QVBoxLayout, QGroupBox, QGridLayout, QPushButton, QSlider, QScrollBar, QLayout, QLayoutItem, QCheckBox, QScrollArea, QSizePolicy, QFileDialog
+from PyQt5.QtCore import Qt, QObject, pyqtSlot, QSignalMapper, QStringListModel
 from PyQt5.QtGui import QPalette, QColor
 
 
@@ -20,7 +20,7 @@ class View(object):
         cmb_box_dataset.addItems(['KDD99', 'KDD99'])
         label_dataset = QLabel('Datasets')
         label_dataset.setBuddy(cmb_box_dataset)
-        btn_import = QPushButton('IMPORT')
+        btn_import = QPushButton('IMPORT', clicked = self.listener.import_dataset)
         btn_del_attr = QPushButton('del attr', objectName = 'delbtn', clicked = self.listener.remove_selected_attr, enabled = False)
         btn_ntb = QPushButton('Transform to binary', objectName = 'ntbbtn', clicked = self.listener.nominal_to_binary, enabled = False)
         #
@@ -40,6 +40,9 @@ class View(object):
         layout_top_upper.addWidget(btn_import)
         layout_top_upper.addWidget(btn_del_attr)
         layout_top_upper.addWidget(btn_ntb)
+        
+        
+        
         
         #Group top left
         top_left_group = QGroupBox('Attributes', objectName = 'top_left_group')
@@ -190,6 +193,16 @@ class View(object):
         else:
             delbtn.setEnabled(True)
     
+    def get_file_selected(self, caption = 'Select dataset', filter = '', directory = ''):
+        file_dialog = QFileDialog(caption = caption, filter = filter, directory = directory)
+        #.getOpenFileName(caption = 'Select dataset', directory = "C:\\", filter = 'Dataset files (*.csv)') 
+        file_selected = []
+        if(file_dialog.exec()):
+            file_selected = file_dialog.selectedFiles()
+        print(file_selected)
+        return file_selected
+
+
 from controller import *
 
 class EventListener(object):
@@ -217,6 +230,10 @@ class EventListener(object):
     def nominal_to_binary(self):
         self.control.nominal_to_binary()
    
+    def import_dataset(self):
+        print('import btn pressed')
+        self.control.import_dataset()
+        pass
         
 
 
