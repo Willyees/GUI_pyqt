@@ -121,6 +121,12 @@ class View(object):
     def set_cmbbox_datasets(self, dataset_names, name_current):
         cmbbox : QComboBox = self.window.findChild(QComboBox, name = 'cmb_box_dataset')
         cmbbox.clear()
+        #keeping the empty as first, so it is guaranteed that it will be the currentIndex after clearing the cmbbox and can be excepted from dataset name to be loaded
+        cmbbox.addItem('')
+        model : QStandardItemModel = cmbbox.model()
+        firstIndex : QModelIndex = model.index(0, cmbbox.modelColumn(), cmbbox.rootModelIndex())
+        firstItem = model.itemFromIndex(firstIndex)
+        firstItem.setSelectable(False)
         cmbbox.addItems(dataset_names)
         cmbbox.setCurrentText(name_current)
         
@@ -132,9 +138,7 @@ class View(object):
     def get_dataset_chosen(self):
         dataset : QComboBox = self.window.findChild(QComboBox, name = 'cmb_box_dataset')
         if(dataset != None):
-            #remove first empty option from datasets cmbbox (is set to empty initially)
-            if(dataset.itemText(0) == ''):
-                dataset.removeItem(0)
+            print(dataset.currentText())
             return dataset.currentText()
         else:
             return 'None'
@@ -171,7 +175,6 @@ class View(object):
             widget = item.widget()
             if(widget != None):
                 widget.deleteLater()
-                
             del item
        
     def get_unselected_attributes(self):

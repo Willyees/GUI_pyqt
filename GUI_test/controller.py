@@ -28,7 +28,7 @@ class Controller(object):
 
     def set_dataset(self):
         dataset_str = self.view.get_dataset_chosen()
-        if(dataset_str != 'None' and dataset_str != self.model.get_dataset_current_name() and dataset_str != ''):
+        if(dataset_str != 'None' and dataset_str != '' and dataset_str != self.model.get_dataset_current_name() ):
             self.model.load_dataset(dataset_str)
             self.show_dataset_attributes()
             
