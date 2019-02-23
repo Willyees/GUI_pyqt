@@ -1,10 +1,7 @@
 -change color button on the attribute left group when pressed (and showed on the right info group)
 -~use a label under the attribute left group buttons so it is fully coloured when pressed
 -figure out how to add attribute names into the db
--resize attribute details box, so it is not as big as the left group box
--remove dataset from cmbox if is not present anymore at old path provided by user when initially loaded (if signal coming from cmbbox, not import btn)
 -check on right format of dataset imported (same type for all attribute records, shape)
-
 
 
 
@@ -15,3 +12,5 @@ DONE
 -convert nominal to binary
 -delete selected attributes
 -import dataset
+-remove dataset from cmbox if is not present anymore at old path provided by user when initially loaded (if signal coming from cmbbox, not import btn)
+-resize attribute details box, so it is not as big as the left group box

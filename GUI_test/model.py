@@ -63,7 +63,7 @@ class Model(object):
         except IOError:
             print("No file present!")
             return False
-
+        print('Reading dataset')
         dataset = []
         for line in file.readlines():
             dataset.append(line.replace('\n', '').split(','))
@@ -85,6 +85,7 @@ class Model(object):
         """retreives data and works on it"""
         #find dataset directory in map
         if(dataset_name.upper() == "KDD99"): #special case. Using sklearn lib to load it
+            print('Reading dataset')
             kdd = datasets.fetch_kddcup99()
             self.dataset.size = len(kdd.data)
             self.attr_size = len(kdd.data[0])
@@ -95,8 +96,8 @@ class Model(object):
             
         else:
             if(dataset_name in self.datasets_location): #only execute if the dataset name is present in the map
-                self.read_dataset(self.datasets_location[dataset_name])
-                
+                return self.read_dataset(self.datasets_location[dataset_name])
+        return True
         
     #def get_directory_dataset(self, name):
     #    if(name in self.datasets_location):
@@ -136,7 +137,7 @@ class Model(object):
                 #print('Continuous')
                 return ('Continuous')
         else:
-            print('Categorical')
+            #print('Categorical')
             return ('Categorical')
         
     def attribute_check_if_binary(self, index):

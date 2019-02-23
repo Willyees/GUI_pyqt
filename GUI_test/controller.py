@@ -29,8 +29,11 @@ class Controller(object):
     def set_dataset(self):
         dataset_str = self.view.get_dataset_chosen()
         if(dataset_str != 'None' and dataset_str != '' and dataset_str != self.model.get_dataset_current_name() ):
-            self.model.load_dataset(dataset_str)
-            self.show_dataset_attributes()
+            if(self.model.load_dataset(dataset_str)):
+                self.show_dataset_attributes()
+            else:
+                names = self.model.get_dataset_names()
+                self.view.set_cmbbox_datasets(names, self.model.get_dataset_current_name())
             
     def show_dataset_attributes(self):
         """get and show on view the current dataset attributes"""
