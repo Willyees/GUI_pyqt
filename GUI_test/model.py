@@ -132,9 +132,16 @@ class Model(object):
         print('Reading dataset')
         dataset = []
         target = []
+        attr_names = [] #could use a set
         #set attribute names in the dataset (only fist line taken)
-        for line in file.readline(): #add: check that are all different
-            self.dataset.attr_names.append(line.replace('\n', '').split(','))
+        line = file.readline() #add: check that are all different
+        line_split = line.replace('\n', '').split(',')
+        for attr in line_split:
+            if attr in attr_names:
+                print("There is a duplicate attribute name, or the first line is not attribute line")
+                return False
+            attr_names.append(attr)
+
         #set attributes values
         for line in file.readlines():
             temp = line.replace('\n', '').split(',')
@@ -149,8 +156,9 @@ class Model(object):
         self.dataset.data = np.asarray(dataset)
         self.dataset.set_properties() #some properties not set, still referring to old dataset
         self.dataset.set_name_path(self.dataset_path_to_name(path), path)
-        self.set_dataset_location(path)
+        self.dataset.set_attribute_names(attr_names)
         
+        self.set_dataset_location(path)
         print(self.datasets_location)
         print(self.dataset.data[0])
         print(self.dataset.attr_names)
@@ -409,6 +417,10 @@ class Dataset(object):
     def set_name_path(self, name, path):
         self.name = name
         self.path = path
+
+    def set_attribute_names(self, attr_names):
+        self.attr_names = attr_names
+
 
 class Algorithm(object):
     def __init__(self, name):
