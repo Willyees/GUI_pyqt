@@ -40,11 +40,12 @@ class Model(object):
     def apply_algorithm(self, algorithm):
         if(self.dataset.size > 0):
             if str.lower(algorithm) == 'som':
-                self.som_algorithm()
-            elif str.lower(algorothm) == 'kmean':
+                return self.som_algorithm()
+            elif str.lower(algorithm) == 'kmean':
                 pass #kmean()
         else:
             #show message box error
+            return {}
             print('no dataset loaded! Cannot perform algorithm')
 
     def som_algorithm(self):
@@ -80,7 +81,7 @@ class Model(object):
         print(results.detection_rate)
         print(results.false_alarm)
         self.results.append(results)
-        return results
+        return results.show_results()
 
     def normal_vs_attacks_detection_som(self, labeled_map : defaultdict):
         clustered_map = dict() #stores the highest elem for each cluster ['type', normals#, attacks#] 
@@ -119,6 +120,38 @@ class Model(object):
                 not_detected += item[1]
             total += item[1]
         return not_detected / total
+
+    def get_som_coord_clusters_normal(self):
+        """return coordinates for normals and anomalies clusters created in the som
+           [[normal],[anomaly]] 
+           normal: [[x1,x2,..],[[y1,y2,..]]
+        """ 
+        map_label = get_som_map_label()
+        if not(map_label):
+            return
+        outlier = [[] for x in range(2)] #[[x1,x2..],[y1,y2..]]
+        inlier = [[] for x in range(2)]
+        for key in map_labeled:
+            if map_labeled[key][0] == 'normal.':
+                inlier[0].append(key[0])
+                inlier[1].append(key[1])
+            elif map_labeled[key][0] == 'attack.':
+                outlier[0].append(key[0])
+                outlier[1].append(key[1])
+        return [inlier, outlier]
+        
+    def get_som_map_label(self):
+        """get last som map label calculated"""
+        if(self.results):
+            result = self.results[len(self.results) - 1]
+            if type(result) != Result_Som:
+                print("Last result is not a SOM, there is no map label to show")
+                return
+            map_label = result.map_label
+            return map_label
+        else:
+            print("No results stored yet, run algorithm at least once")
+            return
 
     def dataset_path_to_name(self, path):
         path_splitted = path.split('/')
@@ -535,8 +568,9 @@ class Result_Alg(object):
         self.detection_rate = -1
         self.false_alarm = -1
 
-    def get_results():
+    def show_results(self):
         common_results = {'detection rate' : self.detection_rate, 'false alarm' : self.false_alarm}
+        return common_results
 
 class Result_Som(Result_Alg):
     def __init__(self, alg_som):
@@ -544,10 +578,11 @@ class Result_Som(Result_Alg):
         self.map_label = []
         self.algorithm_settings = alg_som.copy()
 
-    def get_results():
-        results = super(Result_Som, self).get_results()
-        
-        results.update({'map label' : self.map_label})
+    def show_results(self):
+        """returning results to be shown on view using a dictionary"""
+        results = super(Result_Som, self).show_results()
+        #results.update({'map label' : self.map_label}) #not shown on view, so dont need to pass it
+        return results
 
 
 class Result_Kmean(Result_Alg):
@@ -555,6 +590,8 @@ class Result_Kmean(Result_Alg):
         super(Result_Kmean, self).__init__()
         self.algorith_settings = Algorithm_Kmean()
 
-    def get_results():
-        pass
+    def show_results():
+        results = super(Result_Som, self).show_results()
+        #add other kmean results needed to be shown in view
+        return results
     
