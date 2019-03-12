@@ -104,7 +104,7 @@ class View(object):
     
     def execute(self):
         self.window.show()
-        self.new_window('som')
+        #self.new_window('som')
         self.app.exec_()
 
     def set_attr_group(self, dataset):

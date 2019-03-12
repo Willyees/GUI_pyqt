@@ -6,6 +6,7 @@ from sklearn.cluster import KMeans
 from sklearn import preprocessing
 import math
 from minisom import MiniSom
+from timeit import default_timer as timer
 
 class Model(object):
     
@@ -48,10 +49,10 @@ class Model(object):
             if elem.name == 'som':
                 alg = elem
                 break
-        
-        som = MiniSom(6, 6, self.dataset.attr_size, sigma=1, learning_rate=0.5, neighborhood_function='gaussian')
-        #som = MiniSom(alg.properties['x'], alg.properties['y'], self.dataset.attr_size, sigma = alg.properties['sigma'], learning_rate = alg.properties['learning_rate'], neighborhood_function = alg.properties['neighborhood_function'], random_seed = alg.properties['random_seed'])
-        som.train_batch(self.dataset.data, 100, verbose=True)  
+        data = np.array(self.dataset.data, dtype = float)
+        #som = MiniSom(6, 6, self.dataset.attr_size, sigma=1, learning_rate=0.5, neighborhood_function='gaussian')
+        som = MiniSom(alg.properties['x'], alg.properties['y'], self.dataset.attr_size, sigma = alg.properties['sigma'], learning_rate = alg.properties['learning_rate'], neighborhood_function = alg.properties['neighborhood_function'], random_seed = alg.properties['random_seed'])
+        som.train_batch(data, 100, verbose=True)  
         #som.train_random(self.dataset.data, 100, verbose=True) # random training
         #e = som.labels_map(d.data, d.target)
         #print(e)
@@ -148,12 +149,18 @@ class Model(object):
             target.append(temp.pop())
             dataset.append(temp)
         file.close()
+        #start = timer()
         #setting the type of input data following rules utilized to check type of attributes
         for i in range(len(dataset)):
-            dataset[i] = [self.transform_to_correct_type(x) for x in dataset[i]]
-        
+            dataset[i] = [self.transform_to_correct_type(x) for x in dataset[i]] #very slow! might better just check if it is float or not
+            #for inn in range(len(dataset[i])):
+            #    if(self.is_float(dataset[i][inn])):
+            #        dataset[i][inn] = float(dataset[i][inn])
+        #end = timer()
+        print("timer", str(end - start))
+
         self.dataset.target = np.asarray(target)
-        self.dataset.data = np.asarray(dataset)
+        self.dataset.data = np.asarray(dataset, dtype = np.dtype(object))
         self.dataset.set_properties() #some properties not set, still referring to old dataset
         self.dataset.set_name_path(self.dataset_path_to_name(path), path)
         self.dataset.set_attribute_names(attr_names)
@@ -170,18 +177,26 @@ class Model(object):
         if(dataset_name.upper() == "KDD99"): #special case. Using sklearn lib to load it
             print('Reading dataset')
             kdd = datasets.fetch_kddcup99()
-            self.dataset.size = len(kdd.data)
-            self.attr_size = len(kdd.data[0])
+            #self.dataset.size = len(kdd.data)
+            #self.attr_size = len(kdd.data[0])
             self.dataset.data = kdd.data
+            self.dataset.set_attribute_names = np.asarray(['duration','src_bytes','dst_bytes','land,wrong_fragment','urgent','hot','num_failed_logins','logged_in','num_compromised','root_shell','su_attempted','num_root','num_file_creations','num_shells','num_access_files','num_outbound_cmds','is_host_login','is_guest_login','count','srv_count','serror_rate','srv_serror_rate','rerror_rate','srv_rerror_rate','same_srv_rate','diff_srv_rate','srv_diff_host_rate','dst_host_count','dst_host_srv_count','dst_host_same_srv_rate','dst_host_diff_srv_rate','dst_host_same_src_port_rate','dst_host_srv_diff_host_rate','dst_host_serror_rate','dst_host_srv_serror_rate','dst_host_rerror_rate','dst_host_srv_rerror_rate']) # no class attribute name
             self.dataset.set_properties()
             self.dataset.set_name_path('KDD99', 'inner')
+
             self.datasets_location['KDD99'] = 'inner'
             
         else:
             if(dataset_name in self.datasets_location): #only execute if the dataset name is present in the map
                 return self.read_dataset(self.datasets_location[dataset_name])
         return True
-        
+
+    def is_float(self, value):
+        try:
+            float(value)
+            return True
+        except ValueError:
+            return False     
     #def get_directory_dataset(self, name):
     #    if(name in self.datasets_location):
     #        return self.datasets_location[name]
