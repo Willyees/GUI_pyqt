@@ -231,21 +231,32 @@ class View(object):
     def new_window(self, algorithm):
         self.second_window = QWidget()
         main_layout = QGridLayout()
-        layout_top_upper = QVBoxLayout()
+        layout_top_upper = QHBoxLayout()
         layout_top_upper.addWidget(QLabel(str.upper(algorithm)))
         layout_top_upper.addWidget(QPushButton('modify settings', clicked = self.listener.show_settings_algorithm))
         layout_top_upper.addWidget(QPushButton('View clusters created', clicked = self.listener.view_som_map_clusters))
+        
+        layout_mid = QVBoxLayout(objectName = 'layout_mid')
         m = PlotCanvas(self.second_window, width=5, height=4)
-        layout_top_upper.addWidget(m)
-        layout_mid = QVBoxLayout()
+        layout_mid.addWidget(m)
         layout_bottom = QVBoxLayout()
         layout_bottom.addWidget(QPushButton('RERUN', clicked = self.listener.rerun_algorithm))
         main_layout.addLayout(layout_top_upper,0,0)
         main_layout.addLayout(layout_mid, 1, 0)
         main_layout.addLayout(layout_bottom, 2, 0)
         self.second_window.setLayout(main_layout)
-        
+        self.second_window.setWindowModality(Qt.ApplicationModal)
         self.second_window.show()
+        
+     
+    def show_algorithm_results(self, algorithm, results):
+        self.new_window(algorithm) #work on second window
+        layout_mid = self.second_window.findChild(QVBoxLayout, name = "layout_mid")
+        for key, value in results.items():
+            layout = QHBoxLayout()
+            layout.addWidget(QLabel(str(key)))
+            layout.addWidget(QLabel(str(value)))
+            layout_mid.addLayout(layout)
        
     def test(self):
         self.window.close()
@@ -272,7 +283,7 @@ class PlotCanvas(FigureCanvas):
         ax.plot(data, 'r-')
         ax.set_title('PyQt Matplotlib Example')
         self.draw()
-
+    
 from controller import *
 
 class EventListener(object):

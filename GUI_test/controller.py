@@ -23,7 +23,12 @@ class Controller(object):
 
     def run_algorithm(self):
         algorithm = self.view.get_algorithm_active()
-        self.model.apply_algorithm(algorithm)
+        results : dict = self.model.apply_algorithm(algorithm)
+        #results = {"detection rate": 10, "secodn" : 8.2}
+        if results:
+            self.view.show_algorithm_results(algorithm, results)
+            
+        
 
     def print(self):
         print("SUP?")
@@ -89,7 +94,7 @@ class Controller(object):
             self.show_dataset_attributes()
 
     def import_dataset(self):
-        dataset_path = self.view.get_file_selected(filter = 'Dataset files (*.csv)', directory = 'C:\\Users\\User\\Documents')
+        dataset_path = self.view.get_file_selected(filter = 'Dataset files (*.csv)', directory = 'C:\\Users\\User\\Downloads\\kddcup.data_10_percent')
         if(dataset_path): #check that user selected a file
             self.model.read_dataset(dataset_path[0])
             self.show_dataset_attributes()

@@ -7,6 +7,7 @@ from sklearn import preprocessing
 import math
 from minisom import MiniSom
 from timeit import default_timer as timer
+from collections import defaultdict
 
 class Model(object):
     
@@ -14,17 +15,20 @@ class Model(object):
         self.dataset = Dataset()
         self.datasets_location = dict()
         self.datasets_location['KDD99'] = 'inner'
-        self.algorithms = set()
+        self.datasets_location['TEST'] = 'inner'
+        self.algorithms = set() #available algorithms
         self.set_algorithms()
+        self.results = [] #list of results
+        self.actual_algorithm = Algorithm()
     
     def set_algorithms(self):
         #KMEAN 
-        kmean = Algorithm('kmean')
-        kmean.set_properties({'n_cluster': 8}) #to finish
+        kmean = Algorithm_Kmean()
+        #kmean.set_properties({'n_cluster': 8}) #to finish
         self.algorithms.add(kmean)
         #SOM
-        som = Algorithm('som')
-        som.set_properties({'x': 6, 'y': 6, 'sigma': 1.0, 'learning_rate': 0.5, 'neighborhood_function': 'gaussian', 'random_seed' : None})
+        som = Algorithm_Som()
+        #som.set_properties({'x': 6, 'y': 6, 'sigma': 1.0, 'learning_rate': 0.5, 'neighborhood_function': 'gaussian', 'random_seed' : None})
         som.set_properties_choices({'neighborhood_function': ['gaussian','mexican_hat','bubble','triangle']})
         self.algorithms.add(som)
     #def encode_bytes_to_string(self, dataset): #Too slow, going to encode only the needed ones in the controller (~MVC)
@@ -45,22 +49,56 @@ class Model(object):
 
     def som_algorithm(self):
         alg : Algorithm
-        for elem in self.algorithms:
-            if elem.name == 'som':
-                alg = elem
-                break
-        data = np.array(self.dataset.data, dtype = float)
+        
+        if self.actual_algorithm.name != '':
+            alg = self.actual_algorithm
+        else:
+            for elem in self.algorithms:
+                if elem.name == 'som':
+                    alg = elem
+                    break
+        try:
+            data = np.array(self.dataset.data, dtype = float)
+        except ValueError:
+            print('Not possible to apply SOM on categorical data, transform it')
+            return results
+
         #som = MiniSom(6, 6, self.dataset.attr_size, sigma=1, learning_rate=0.5, neighborhood_function='gaussian')
-        som = MiniSom(alg.properties['x'], alg.properties['y'], self.dataset.attr_size, sigma = alg.properties['sigma'], learning_rate = alg.properties['learning_rate'], neighborhood_function = alg.properties['neighborhood_function'], random_seed = alg.properties['random_seed'])
+        som = MiniSom(alg.x, alg.y, self.dataset.attr_size, sigma = alg.sigma, learning_rate = alg.learning_rate, neighborhood_function = alg.neighborhood_function, random_seed = alg.random_seed)
         som.train_batch(data, 100, verbose=True)  
         #som.train_random(self.dataset.data, 100, verbose=True) # random training
-        #e = som.labels_map(d.data, d.target)
-        #print(e)
-        #map_labeled = normal_vs_attacks_detection_som(e)
-        #print(map_labeled)
-        #print(calculate_detection_rate_som(map_labeled))
-        #print(calculate_false_alarm_som(map_labeled))
+        e = som.labels_map(data, self.dataset.target)
+        print(e)
+        map_labeled = self.normal_vs_attacks_detection_som(e)
+        
+        print(map_labeled)
 
+        results = Result_Som(alg)
+        results.map_label
+        results.detection_rate = self.calculate_detection_rate_som(map_labeled)
+        results.false_alarm = self.calculate_false_alarm_som(map_labeled)
+        print(results.detection_rate)
+        print(results.false_alarm)
+        self.results.append(results)
+        return results
+
+    def normal_vs_attacks_detection_som(self, labeled_map : defaultdict):
+        clustered_map = dict() #stores the highest elem for each cluster ['type', normals#, attacks#] 
+        for key in labeled_map:
+            normal = 0
+            attack = 0
+            for d in labeled_map.get(key):
+                if(d != 'normal.'):
+                    attack += labeled_map.get(key).get(d)
+                elif(d != ''):
+                    normal += labeled_map.get(key).get(d)
+            if(normal > attack):
+                clustered_map[key] = ['normal.', normal, attack]
+            elif(normal < attack):
+                clustered_map[key] = ['attack.', normal, attack]
+            else:
+                print('normal and attack number is the same. messed up')
+        return clustered_map
 
     def calculate_detection_rate_som(self, clusters_labeled):
         """ratio of the detected attack records to the total attack records"""
@@ -72,7 +110,7 @@ class Model(object):
             total += item[2]
         return detected / total
 
-    def calculate_false_alarm_som(clusters_labeled):
+    def calculate_false_alarm_som(self, clusters_labeled):
         """the ratio of the normal records detected as the attack record, to total normal records"""
         not_detected = 0
         total = 0
@@ -157,7 +195,7 @@ class Model(object):
             #    if(self.is_float(dataset[i][inn])):
             #        dataset[i][inn] = float(dataset[i][inn])
         #end = timer()
-        print("timer", str(end - start))
+        #print("timer", str(end - start))
 
         self.dataset.target = np.asarray(target)
         self.dataset.data = np.asarray(dataset, dtype = np.dtype(object))
@@ -174,12 +212,25 @@ class Model(object):
     def load_dataset(self, dataset_name):
         """retreives data and works on it"""
         #find dataset directory in map
-        if(dataset_name.upper() == "KDD99"): #special case. Using sklearn lib to load it
+        #DEBUG
+        if(dataset_name.upper() == "TEST"):
+            print('Reading dataset')
+            self.dataset.data = np.asarray([[1,1.5],[2,2.5],[10,3.5],[25,9.5]])
+            self.dataset.target = np.asarray(['normal.', 'normal.', 'attack.', 'attack.'])
+            self.dataset.set_attribute_names = np.asarray(['a','b'])
+            self.dataset.set_properties()
+            self.dataset.set_name_path('TEST', 'inner')
+            self.datasets_location['TEST'] = 'inner'
+
+
+        elif(dataset_name.upper() == "KDD99"): #special case. Using sklearn lib to load it
             print('Reading dataset')
             kdd = datasets.fetch_kddcup99()
             #self.dataset.size = len(kdd.data)
             #self.attr_size = len(kdd.data[0])
-            self.dataset.data = kdd.data
+            self.dataset.data = np.asarray(kdd.data)
+            self.dataset.target = np.array(kdd.target, str)
+            print(self.dataset.target[0])
             self.dataset.set_attribute_names = np.asarray(['duration','src_bytes','dst_bytes','land,wrong_fragment','urgent','hot','num_failed_logins','logged_in','num_compromised','root_shell','su_attempted','num_root','num_file_creations','num_shells','num_access_files','num_outbound_cmds','is_host_login','is_guest_login','count','srv_count','serror_rate','srv_serror_rate','rerror_rate','srv_rerror_rate','same_srv_rate','diff_srv_rate','srv_diff_host_rate','dst_host_count','dst_host_srv_count','dst_host_same_srv_rate','dst_host_diff_srv_rate','dst_host_same_src_port_rate','dst_host_srv_diff_host_rate','dst_host_serror_rate','dst_host_srv_serror_rate','dst_host_rerror_rate','dst_host_srv_rerror_rate']) # no class attribute name
             self.dataset.set_properties()
             self.dataset.set_name_path('KDD99', 'inner')
@@ -437,16 +488,73 @@ class Dataset(object):
         self.attr_names = attr_names
 
 
-class Algorithm(object):
-    def __init__(self, name):
-        self.name = str.lower(name)
-        self.properties = {}
+class Algorithm(object): #abstract class
+    def __init__(self):
+        self.name = ''
         self.properties_choices = {} #dictionary of properties that the user can choose from
-    def set_properties(self, properties): #[properties: [[name1, value1], [name2, value2]]
+        
+    #def set_properties(self, properties): #[properties: [[name1, value1], [name2, value2]]
         #add or modify existing property
-        for property, value in properties.items():
-            self.properties[str.lower(str(property))] = value
+        #for property, value in properties.items():
+        #    self.properties[str.lower(str(property))] = value
+    
+    def get_properties(self):
+        raise NotImplementedError()
 
     def set_properties_choices(self, choices : dict): #choices {property : [choices]}
         for key, value in choices.items():
             self.properties_choices[str.lower(str(key))] = value
+
+class Algorithm_Som(Algorithm):
+    def __init__(self, x = 6, y = 6, sigma = 1.0, learning_rate = 0.5, neighborhood_function = 'gaussian', random_seed = None): #intial settings
+        super(Algorithm_Som, self).__init__()
+        self.name = 'som'
+        self.x = x
+        self.y = y
+        self.sigma = sigma
+        self.learning_rate = learning_rate
+        self.neighborhood_function = neighborhood_function
+        self.random_seed = random_seed
+
+    def get_properties():
+        properties = {'x': self.x, 'y': self.y, 'sigma': self.sigma, 'learning_rate': self.learning_rate, 'neighborhood_function': self.neighborhood_function, 'random_seed' : self.random_seed}
+        return properties
+
+    def copy(self):
+        copy_alg = Algorithm_Som(self.x, self.y, self.sigma, self.learning_rate, self.neighborhood_function, self.random_seed)
+        return copy_alg
+
+class Algorithm_Kmean(Algorithm):
+    def __init__(self):
+        super(Algorithm_Kmean, self).__init__()
+        self.cluster_n = 8 #specify initial settings
+
+
+class Result_Alg(object):
+    def __init__(self):
+        self.detection_rate = -1
+        self.false_alarm = -1
+
+    def get_results():
+        common_results = {'detection rate' : self.detection_rate, 'false alarm' : self.false_alarm}
+
+class Result_Som(Result_Alg):
+    def __init__(self, alg_som):
+        super(Result_Som, self).__init__()
+        self.map_label = []
+        self.algorithm_settings = alg_som.copy()
+
+    def get_results():
+        results = super(Result_Som, self).get_results()
+        
+        results.update({'map label' : self.map_label})
+
+
+class Result_Kmean(Result_Alg):
+    def __init__(self):
+        super(Result_Kmean, self).__init__()
+        self.algorith_settings = Algorithm_Kmean()
+
+    def get_results():
+        pass
+    
