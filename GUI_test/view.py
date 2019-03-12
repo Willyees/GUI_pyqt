@@ -1,14 +1,17 @@
 from PyQt5.QtWidgets import QApplication, QLabel, QComboBox, QHBoxLayout, QWidget, QVBoxLayout, QGroupBox, QGridLayout, QPushButton, QSlider, QScrollBar, QLayout, QLayoutItem, QCheckBox, QScrollArea, QSizePolicy, QFileDialog
 from PyQt5.QtCore import Qt, QObject, pyqtSlot, QSignalMapper, QStringListModel, QModelIndex
 from PyQt5.QtGui import QPalette, QColor, QStandardItemModel
-
-
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
+import random
 class View(object):
     def __init__(self):
         print("init")
         self.listener = EventListener()
         self.app = QApplication([])
         self.window = QWidget()
+        self.second_window : QWidget()
         self.attribute_checked = 0
       
     def startView(self, dataset_names):
@@ -28,8 +31,7 @@ class View(object):
         btn_import = QPushButton('IMPORT', clicked = self.listener.import_dataset)
         btn_del_attr = QPushButton('del attr', objectName = 'delbtn', clicked = self.listener.remove_selected_attr, enabled = False)
         btn_ntb = QPushButton('Transform to binary', objectName = 'ntbbtn', clicked = self.listener.nominal_to_binary, enabled = False)
-        #
-
+        
         #btn_import.setStyleSheet("background : yellow")
         pal = btn_import.palette()
         #pal.setColor(QPalette.Active, QPalette.Button, QColor(Qt.yellow))
@@ -46,7 +48,10 @@ class View(object):
         layout_top_upper.addWidget(btn_del_attr)
         layout_top_upper.addWidget(btn_ntb)
         
-        
+        #debugging
+        btn_test = QPushButton('test', clicked = self.test)
+        layout_top_upper.addWidget(btn_test)
+        #
         
         
         #Group top left
@@ -83,7 +88,7 @@ class View(object):
         
         alg_label = QLabel('Algorithm to apply')
         alg_label.setBuddy(alg_menu)
-        apply_btn = QPushButton('&APPLY')
+        apply_btn = QPushButton('&APPLY', clicked = self.listener.submit_window)
         layout_button.addWidget(alg_label)
         layout_button.addWidget(alg_menu)
         layout_button.addWidget(apply_btn)
@@ -99,6 +104,7 @@ class View(object):
     
     def execute(self):
         self.window.show()
+        self.new_window('som')
         self.app.exec_()
 
     def set_attr_group(self, dataset):
@@ -218,6 +224,54 @@ class View(object):
         print(file_selected)
         return file_selected
 
+    def get_algorithm_active(self):
+        algorithm : QComboBox = self.window.findChild(QComboBox, name = "alg_menu")
+        return algorithm.currentText()
+
+    def new_window(self, algorithm):
+        self.second_window = QWidget()
+        main_layout = QGridLayout()
+        layout_top_upper = QVBoxLayout()
+        layout_top_upper.addWidget(QLabel(str.upper(algorithm)))
+        layout_top_upper.addWidget(QPushButton('modify settings', clicked = self.listener.show_settings_algorithm))
+        layout_top_upper.addWidget(QPushButton('View clusters created', clicked = self.listener.view_som_map_clusters))
+        m = PlotCanvas(self.second_window, width=5, height=4)
+        layout_top_upper.addWidget(m)
+        layout_mid = QVBoxLayout()
+        layout_bottom = QVBoxLayout()
+        layout_bottom.addWidget(QPushButton('RERUN', clicked = self.listener.rerun_algorithm))
+        main_layout.addLayout(layout_top_upper,0,0)
+        main_layout.addLayout(layout_mid, 1, 0)
+        main_layout.addLayout(layout_bottom, 2, 0)
+        self.second_window.setLayout(main_layout)
+        
+        self.second_window.show()
+       
+    def test(self):
+        self.window.close()
+        
+class PlotCanvas(FigureCanvas):
+ 
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+        fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = fig.add_subplot(111)
+ 
+        FigureCanvas.__init__(self, fig)
+        self.setParent(parent)
+ 
+        FigureCanvas.setSizePolicy(self,
+                QSizePolicy.Expanding,
+                QSizePolicy.Expanding)
+        FigureCanvas.updateGeometry(self)
+        self.plot()
+        
+ 
+    def plot(self):
+        data = [random.random() for i in range(25)]
+        ax = self.figure.add_subplot(111)
+        ax.plot(data, 'r-')
+        ax.set_title('PyQt Matplotlib Example')
+        self.draw()
 
 from controller import *
 
@@ -238,7 +292,7 @@ class EventListener(object):
         self.control.attribute_checked(state)
         
     def submit_window(self):
-        self.control.submit_window()
+        self.control.run_algorithm()
         
     def remove_selected_attr(self):
         self.control.attr_removed()
@@ -250,6 +304,12 @@ class EventListener(object):
         print('import btn pressed')
         self.control.import_dataset()
 
+    def view_som_map_clusters(self):
+        self.control.view_som_map_clusters()
 
-
+    def show_settings_algorithm(self):
+        self.control.show_settings_algorithm()
+    
+    def rerun_algorithm(self):
+        self.control.rerun_algorithm()
     

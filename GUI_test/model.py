@@ -2,6 +2,10 @@ from sklearn import datasets
 import math
 import numpy as np
 import os.path
+from sklearn.cluster import KMeans
+from sklearn import preprocessing
+import math
+from minisom import MiniSom
 
 class Model(object):
     
@@ -9,12 +13,74 @@ class Model(object):
         self.dataset = Dataset()
         self.datasets_location = dict()
         self.datasets_location['KDD99'] = 'inner'
-        
+        self.algorithms = set()
+        self.set_algorithms()
+    
+    def set_algorithms(self):
+        #KMEAN 
+        kmean = Algorithm('kmean')
+        kmean.set_properties({'n_cluster': 8}) #to finish
+        self.algorithms.add(kmean)
+        #SOM
+        som = Algorithm('som')
+        som.set_properties({'x': 6, 'y': 6, 'sigma': 1.0, 'learning_rate': 0.5, 'neighborhood_function': 'gaussian', 'random_seed' : None})
+        som.set_properties_choices({'neighborhood_function': ['gaussian','mexican_hat','bubble','triangle']})
+        self.algorithms.add(som)
     #def encode_bytes_to_string(self, dataset): #Too slow, going to encode only the needed ones in the controller (~MVC)
     #    for item in dataset:
     #        for index in range(len(dataset[0])):
     #            if(type(item[index]) == bytes):
     #                dataset[str(item[index], "utf-8")
+    
+    def apply_algorithm(self, algorithm):
+        if(self.dataset.size > 0):
+            if str.lower(algorithm) == 'som':
+                self.som_algorithm()
+            elif str.lower(algorothm) == 'kmean':
+                pass #kmean()
+        else:
+            #show message box error
+            print('no dataset loaded! Cannot perform algorithm')
+
+    def som_algorithm(self):
+        alg : Algorithm
+        for elem in self.algorithms:
+            if elem.name == 'som':
+                alg = elem
+                break
+        
+        som = MiniSom(6, 6, self.dataset.attr_size, sigma=1, learning_rate=0.5, neighborhood_function='gaussian')
+        #som = MiniSom(alg.properties['x'], alg.properties['y'], self.dataset.attr_size, sigma = alg.properties['sigma'], learning_rate = alg.properties['learning_rate'], neighborhood_function = alg.properties['neighborhood_function'], random_seed = alg.properties['random_seed'])
+        som.train_batch(self.dataset.data, 100, verbose=True)  
+        #som.train_random(self.dataset.data, 100, verbose=True) # random training
+        #e = som.labels_map(d.data, d.target)
+        #print(e)
+        #map_labeled = normal_vs_attacks_detection_som(e)
+        #print(map_labeled)
+        #print(calculate_detection_rate_som(map_labeled))
+        #print(calculate_false_alarm_som(map_labeled))
+
+
+    def calculate_detection_rate_som(self, clusters_labeled):
+        """ratio of the detected attack records to the total attack records"""
+        detected = 0
+        total = 0
+        for item in clusters_labeled.values():
+            if(item[0] == 'attack.'):
+                detected += item[2]
+            total += item[2]
+        return detected / total
+
+    def calculate_false_alarm_som(clusters_labeled):
+        """the ratio of the normal records detected as the attack record, to total normal records"""
+        not_detected = 0
+        total = 0
+        for item in clusters_labeled.values():
+            if(item == 'attack.'):
+                not_detected += item[1]
+            total += item[1]
+        return not_detected / total
+
     def dataset_path_to_name(self, path):
         path_splitted = path.split('/')
         name = (path_splitted[len(path_splitted) - 1]).split('.')[0] #last part of directory, less the extension
@@ -65,20 +131,29 @@ class Model(object):
             return False
         print('Reading dataset')
         dataset = []
+        target = []
+        #set attribute names in the dataset (only fist line taken)
+        for line in file.readline(): #add: check that are all different
+            self.dataset.attr_names.append(line.replace('\n', '').split(','))
+        #set attributes values
         for line in file.readlines():
-            dataset.append(line.replace('\n', '').split(','))
+            temp = line.replace('\n', '').split(',')
+            target.append(temp.pop())
+            dataset.append(temp)
         file.close()
         #setting the type of input data following rules utilized to check type of attributes
         for i in range(len(dataset)):
             dataset[i] = [self.transform_to_correct_type(x) for x in dataset[i]]
-        dataset = np.asarray(dataset, dtype = np.dtype(object))
-        self.dataset.data = dataset
+        
+        self.dataset.target = np.asarray(target)
+        self.dataset.data = np.asarray(dataset)
         self.dataset.set_properties() #some properties not set, still referring to old dataset
         self.dataset.set_name_path(self.dataset_path_to_name(path), path)
         self.set_dataset_location(path)
         
         print(self.datasets_location)
-        print(self.dataset.data)
+        print(self.dataset.data[0])
+        print(self.dataset.attr_names)
         return True
 
     def load_dataset(self, dataset_name):
@@ -317,6 +392,7 @@ class Model(object):
 class Dataset(object):
     def __init__(self):
         self.data = [[]]
+        self.target = [] #labels
         self.attr_names = []
         self.attr_types = []
         self.attr_size = 0
@@ -333,3 +409,17 @@ class Dataset(object):
     def set_name_path(self, name, path):
         self.name = name
         self.path = path
+
+class Algorithm(object):
+    def __init__(self, name):
+        self.name = str.lower(name)
+        self.properties = {}
+        self.properties_choices = {} #dictionary of properties that the user can choose from
+    def set_properties(self, properties): #[properties: [[name1, value1], [name2, value2]]
+        #add or modify existing property
+        for property, value in properties.items():
+            self.properties[str.lower(str(property))] = value
+
+    def set_properties_choices(self, choices : dict): #choices {property : [choices]}
+        for key, value in choices.items():
+            self.properties_choices[str.lower(str(key))] = value

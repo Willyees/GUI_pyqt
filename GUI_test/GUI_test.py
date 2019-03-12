@@ -7,8 +7,5 @@ from model import *
 
 def main():
     contr = Controller(Model(), View())
-     
-   
-    
 
 main()

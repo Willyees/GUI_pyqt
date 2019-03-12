@@ -12,6 +12,7 @@ class Controller(object):
         self.view = view
         
         self.startView()
+        
 
 
     def startView(self):
@@ -20,8 +21,9 @@ class Controller(object):
         #self.view.set_cmbbox_datasets(self.model.get_dataset_names(), 'a')
         self.view.execute()
 
-    def submit_form(self):
-        print(self.view.get_info())
+    def run_algorithm(self):
+        algorithm = self.view.get_algorithm_active()
+        self.model.apply_algorithm(algorithm)
 
     def print(self):
         print("SUP?")
@@ -96,3 +98,21 @@ class Controller(object):
             #read the file in the model and set it as dataset
             #store file location along with the name in model
             #update cmbbox view with the new dataset name
+
+    def view_som_map_clusters(self):
+        pass
+        #model calculate clusters names
+        #view them in the view
+
+    def show_settings_algorithm(self):
+        pass
+        #show new window where user can input different settings for algorithm
+        #get available settings from model
+        #get last used settings 
+        #show window with data
+        
+
+    def rerun_algorithm(self):
+        pass
+        #get algorithm from view
+        #run algorithm
