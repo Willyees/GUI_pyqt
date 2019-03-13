@@ -258,7 +258,7 @@ class View(object):
             layout.addWidget(QLabel(str(value)))
             layout_mid.addLayout(layout)
     
-    def show_new_window_scatterplot(self, labels_element, x_coords, y_coords):
+    def show_new_window_scatterplot(self, labels_element, x_coords, y_coords, name = None):
         if len(x_coords) != len(y_coords):
             print("missing coordinates for categories to represent in the scatterplot")
             return
@@ -266,7 +266,7 @@ class View(object):
             print("mismatching number of labels and categories coordinates")
             return
 
-        plt.figure()
+        plt.figure(num = name)
         for index in range(len(x_coords)):
             plt.scatter(x_coords[index], y_coords[index],
                 label=labels_element[index])

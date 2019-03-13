@@ -105,13 +105,13 @@ class Controller(object):
             #update cmbbox view with the new dataset name
 
     def view_som_map_clusters(self):
-        #coords_map_label = self.model.get_som_coord_clusters_normal()
-        coords_map_label = [[[1,2],[3,3]],[[5,6], [2,2]]]
+        coords_map_label = self.model.get_som_coord_clusters_normal()
+        
         if coords_map_label != None:
             x_coords = list(zip(*coords_map_label))[0]
             y_coords = list(zip(*coords_map_label))[1]
     
-            self.view.show_new_window_scatterplot(['Normal', 'Anomaly'], x_coords, y_coords)
+            self.view.show_new_window_scatterplot(['Normal', 'Anomaly'], x_coords, y_coords, name = "Som map labels")
         #model calculate clusters names,
         #view them in the view
 

@@ -62,7 +62,7 @@ class Model(object):
             data = np.array(self.dataset.data, dtype = float)
         except ValueError:
             print('Not possible to apply SOM on categorical data, transform it')
-            return results
+            return {}
 
         #som = MiniSom(6, 6, self.dataset.attr_size, sigma=1, learning_rate=0.5, neighborhood_function='gaussian')
         som = MiniSom(alg.x, alg.y, self.dataset.attr_size, sigma = alg.sigma, learning_rate = alg.learning_rate, neighborhood_function = alg.neighborhood_function, random_seed = alg.random_seed)
@@ -75,7 +75,7 @@ class Model(object):
         print(map_labeled)
 
         results = Result_Som(alg)
-        results.map_label
+        results.map_label = map_labeled
         results.detection_rate = self.calculate_detection_rate_som(map_labeled)
         results.false_alarm = self.calculate_false_alarm_som(map_labeled)
         print(results.detection_rate)
@@ -126,8 +126,8 @@ class Model(object):
            [[normal],[anomaly]] 
            normal: [[x1,x2,..],[[y1,y2,..]]
         """ 
-        map_label = get_som_map_label()
-        if not(map_label):
+        map_labeled = self.get_som_map_label()
+        if not(map_labeled):
             return
         outlier = [[] for x in range(2)] #[[x1,x2..],[y1,y2..]]
         inlier = [[] for x in range(2)]
