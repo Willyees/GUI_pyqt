@@ -116,7 +116,11 @@ class Controller(object):
         #view them in the view
 
     def show_settings_algorithm(self):
-        pass
+        properties = self.model.get_current_alg_properties()
+        choices = self.model.get_current_alg_properties_choices()
+        if(choices != None): #check that prop in choices are also in properties
+            self.view.create_new_submit_form_window(properties, choices)
+        
         #show new window where user can input different settings for algorithm
         #get available settings from model
         #get last used settings 

@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QLabel, QComboBox, QHBoxLayout, QWidget, QVBoxLayout, QGroupBox, QGridLayout, QPushButton, QSlider, QScrollBar, QLayout, QLayoutItem, QCheckBox, QScrollArea, QSizePolicy, QFileDialog
+from PyQt5.QtWidgets import QApplication, QLabel, QComboBox, QHBoxLayout, QWidget, QVBoxLayout, QGroupBox, QGridLayout, QPushButton, QSlider, QScrollBar, QLayout, QLayoutItem, QCheckBox, QScrollArea, QSizePolicy, QFileDialog, QInputDialog
 from PyQt5.QtCore import Qt, QObject, pyqtSlot, QSignalMapper, QStringListModel, QModelIndex
 from PyQt5.QtGui import QPalette, QColor, QStandardItemModel
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -12,6 +12,7 @@ class View(object):
         self.app = QApplication([])
         self.window = QWidget()
         self.second_window : QWidget()
+        self.additional_windows = []
         self.attribute_checked = 0
       
     def startView(self, dataset_names):
@@ -240,12 +241,15 @@ class View(object):
         m = PlotCanvas(self.second_window, width=5, height=4)
         layout_mid.addWidget(m)
         layout_bottom = QVBoxLayout()
-        layout_bottom.addWidget(QPushButton('RERUN', clicked = self.listener.rerun_algorithm))
+        btn_rerun = QPushButton('RERUN', clicked = self.listener.rerun_algorithm, maximumWidth = 100)
+        layout_bottom.addWidget(btn_rerun)
+        layout_bottom.setAlignment(btn_rerun, Qt.AlignCenter)
+        
         main_layout.addLayout(layout_top_upper,0,0)
         main_layout.addLayout(layout_mid, 1, 0)
         main_layout.addLayout(layout_bottom, 2, 0)
         self.second_window.setLayout(main_layout)
-        self.second_window.setWindowModality(Qt.ApplicationModal)
+        #self.second_window.setWindowModality(Qt.ApplicationModal)
         self.second_window.show()
         
      
@@ -273,6 +277,43 @@ class View(object):
         
         plt.legend()
         plt.show()
+    
+    def create_new_submit_form_window(self, fields : dict, options_fields : dict):
+        """will create a new window with specified fields and default input preloaded in the view"""
+        window = QWidget()
+        main_grid = QGridLayout()
+        outer_layout = QVBoxLayout()
+        for key, value in fields.items():
+            #layout = QVBoxLayout()
+            #layout.addWidget(QLabel(key))
+            input = QInputDialog()
+            if(key in options_fields): 
+                input.setComboBoxItems(options_fields[key])    
+                #input.setMaximumWidth(500)
+                input.setTextValue(str(value))
+            else:
+                if type(value) == float:
+                    input.setDoubleValue(float(value))
+                elif type(value) == int:
+                    input.setIntValue(int(value))
+                else:
+                    input.setTextValue(str(value))
+                
+            input.setOption(QInputDialog.NoButtons)
+            input.setLabelText(key)
+            input.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred)
+            outer_layout.addWidget(input)
+        
+        bottom_layout = QHBoxLayout()
+        set_btn = QPushButton('SET')
+        set_btn.setMaximumWidth(100)
+        bottom_layout.addWidget(set_btn)
+        
+        main_grid.addLayout(outer_layout, 0, 0)
+        main_grid.addLayout(bottom_layout, 1, 0)
+        window.setLayout(main_grid)
+        self.additional_windows.append(window)
+        self.additional_windows[0].show()    
 
     def test(self):
         self.window.close()

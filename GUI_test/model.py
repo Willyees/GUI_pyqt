@@ -57,6 +57,7 @@ class Model(object):
             for elem in self.algorithms:
                 if elem.name == 'som':
                     alg = elem
+                    self.actual_algorithm = alg
                     break
         try:
             data = np.array(self.dataset.data, dtype = float)
@@ -152,6 +153,19 @@ class Model(object):
         else:
             print("No results stored yet, run algorithm at least once")
             return
+
+    def get_current_alg_properties(self):
+        current_alg = self.actual_algorithm
+        return current_alg.get_properties()
+    
+    def get_current_alg_properties_choices(self):
+        properties = self.get_current_alg_properties()
+        choices = self.actual_algorithm.get_properties_choices()
+        for key in choices:
+            if not(key in properties):
+                print("mismatch between choice properties and properties for the current algorithm")
+                return
+        return choices
 
     def dataset_path_to_name(self, path):
         path_splitted = path.split('/')
@@ -531,6 +545,9 @@ class Algorithm(object): #abstract class
         #for property, value in properties.items():
         #    self.properties[str.lower(str(property))] = value
     
+    def get_properties_choices(self):
+        return self.properties_choices
+
     def get_properties(self):
         raise NotImplementedError()
 
@@ -549,7 +566,7 @@ class Algorithm_Som(Algorithm):
         self.neighborhood_function = neighborhood_function
         self.random_seed = random_seed
 
-    def get_properties():
+    def get_properties(self):
         properties = {'x': self.x, 'y': self.y, 'sigma': self.sigma, 'learning_rate': self.learning_rate, 'neighborhood_function': self.neighborhood_function, 'random_seed' : self.random_seed}
         return properties
 
