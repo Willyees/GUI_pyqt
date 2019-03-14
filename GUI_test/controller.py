@@ -45,8 +45,9 @@ class Controller(object):
     def show_dataset_attributes(self):
         """get and show on view the current dataset attributes"""
         dataset_attributes = self.model.attributes_type()
+        dataset_attr_names = self.model.attributes_names()
         if(dataset_attributes != [""]):
-            self.view.set_attr_group(dataset_attributes)
+            self.view.set_attr_group(dataset_attributes, dataset_attr_names)
 
     def attribute_chosen(self, index):
         #index = self.transform_to_attribute_index(attribute)
@@ -119,7 +120,7 @@ class Controller(object):
         properties = self.model.get_current_alg_properties()
         choices = self.model.get_current_alg_properties_choices()
         if(choices != None): #check that prop in choices are also in properties
-            self.view.create_new_submit_form_window(properties, choices)
+            self.view.create_new_submit_form_window("Input properties algorithm", properties, choices)
         
         #show new window where user can input different settings for algorithm
         #get available settings from model

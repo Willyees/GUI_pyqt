@@ -109,14 +109,15 @@ class View(object):
         #self.new_window('som')
         self.app.exec_()
 
-    def set_attr_group(self, dataset):
+    def set_attr_group(self, dataset, names):
         layout = self.window.findChild(QVBoxLayout, name = "top_left_box")
         self.clean_layout(layout)
 
         for index, item in enumerate(dataset):
             layout_inner = QHBoxLayout(objectName = "top_left_box_inner")
             check = QCheckBox(checked = False, stateChanged = self.listener.attribute_checked)
-            btn = QPushButton('attr.' + str(index + 1), objectName = 'attr.' + str(index), flat = False)#at the moment hardcoding name of attributes because no name on the dataset (KDD)
+            name_attr = names[index] if len(names) != 0 else 'attr.' + str(index + 1) 
+            btn = QPushButton(name_attr, objectName = 'attr.' + str(index), flat = False)#at the moment hardcoding name of attributes because no name on the dataset (KDD)
             #using lambda to pass an additional paramether. Have to use i = index or the last variable will be passed to all the lambdas
             btn.clicked.connect(lambda a, i = index : self.listener.attribute_selected(i)) #have to use additional a paramether because connect will pass a boolean variable and if not consumed will be assigned to i and then passed to listener function
             layout_inner.addWidget(check)
@@ -236,7 +237,8 @@ class View(object):
         layout_top_upper = QHBoxLayout()
         layout_top_upper.addWidget(QLabel(str.upper(algorithm)))
         layout_top_upper.addWidget(QPushButton('modify settings', clicked = self.listener.show_settings_algorithm))
-        layout_top_upper.addWidget(QPushButton('View clusters created', clicked = self.listener.view_som_map_clusters))
+        if(algorithm == 'som'): #dirty
+            layout_top_upper.addWidget(QPushButton('View clusters created', clicked = self.listener.view_som_map_clusters))
         
         layout_mid = QVBoxLayout(objectName = 'layout_mid')
         m = PlotCanvas(self.second_window, width=5, height=4)
@@ -280,11 +282,16 @@ class View(object):
         plt.show()
         
     
-    def create_new_submit_form_window(self, fields : dict, options_fields : dict):
-        """will create a new window with specified fields and default input preloaded in the view"""
+    def create_new_submit_form_window(self, info, fields : dict, options_fields : dict):
+        """will create a new window with specified fields and default input preloaded in the view
+        info: text to dispay at the top of the window (bold)"""
         window = QWidget(destroyed = self.closed_additional_window)
         window.setAttribute(Qt.WA_DeleteOnClose)
         main_grid = QGridLayout()
+        layout_info = QHBoxLayout()
+        info = QLabel(info)
+        info.setStyleSheet("font-weight: bold")
+        layout_info.addWidget(info)
         outer_layout = QVBoxLayout()
         for key, value in fields.items():
             #layout = QVBoxLayout()
@@ -312,8 +319,9 @@ class View(object):
         set_btn.setMaximumWidth(100)
         bottom_layout.addWidget(set_btn)
         
-        main_grid.addLayout(outer_layout, 0, 0)
-        main_grid.addLayout(bottom_layout, 1, 0)
+        main_grid.addLayout(layout_info, 0, 0)
+        main_grid.addLayout(outer_layout, 1, 0)
+        main_grid.addLayout(bottom_layout, 2, 0)
         window.setLayout(main_grid)
         self.additional_windows.append(window)
         self.additional_windows[0].show()    

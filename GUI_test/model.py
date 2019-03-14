@@ -19,11 +19,11 @@ class Model(object):
         self.algorithms = set() #available algorithms
         self.set_algorithms()
         self.results = [] #list of results
-        self.actual_algorithm = Algorithm()
+        self.current_algorithm = Algorithm()
     
     def set_algorithms(self):
         #KMEAN 
-        kmean = Algorithm_Kmean()
+        kmean = Algorithm_Kmean(2)
         #kmean.set_properties({'n_cluster': 8}) #to finish
         self.algorithms.add(kmean)
         #SOM
@@ -34,100 +34,61 @@ class Model(object):
     
     def apply_algorithm(self, algorithm):
         if(self.dataset.size > 0):
-            if str.lower(algorithm) == 'som':
-                return self.som_algorithm()
-            elif str.lower(algorithm) == 'kmean':
-                self.kmean_algorithm()
+            alg : Algorithm
+            if self.current_algorithm.name != '':
+                alg = self.current_algorithm
+            else:
+                for elem in self.algorithms:
+                    if elem.name == str.lower(algorithm):
+                        alg = elem
+                        self.current_algorithm = alg
+                        break
+
+            return alg.apply_alg(self.dataset)
+            
         else:
             #show message box error
-            return {}
             print('no dataset loaded! Cannot perform algorithm')
+            return {}
+
     
+    def apply_current_algorithm(self):
+        if(self.dataset.size > 0):
+            self.current_algortithm.apply_alg(self.dataset)
+        else:
+        #show message box error
+            print('no dataset loaded! Cannot perform algorithm')
+            return {}
+            
+
+
     def kmean_algorithm(self):
         alg : Algorithm
 
-        if self.actual_algorithm.name != '':
-            alg = self.actual_algorithm
+        if self.current_algorithm.name != '':
+            alg = self.current_algorithm
         else:
             for elem in self.algorithms:
                 if elem.name == 'kmean':
                     alg = elem
-                    self.actual_algorithm = alg
+                    self.current_algorithm = alg
                     break
+        results = self.current_algorithm.apply_alg(self.dataset)
+        self.results.append(results)
+        return results
 
     def som_algorithm(self): #might move the function in the som object
         alg : Algorithm
         
-        if self.actual_algorithm.name != '':
-            alg = self.actual_algorithm
+        if self.current_algorithm.name != '':
+            alg = self.current_algorithm
         else:
             for elem in self.algorithms:
                 if elem.name == 'som':
                     alg = elem
-                    self.actual_algorithm = alg
+                    self.current_algorithm = alg
                     break
-        try:
-            data = np.array(self.dataset.data, dtype = float)
-        except ValueError:
-            print('Not possible to apply SOM on categorical data, transform it')
-            return {}
-
-        #som = MiniSom(6, 6, self.dataset.attr_size, sigma=1, learning_rate=0.5, neighborhood_function='gaussian')
-        som = MiniSom(alg.x, alg.y, self.dataset.attr_size, sigma = alg.sigma, learning_rate = alg.learning_rate, neighborhood_function = alg.neighborhood_function, random_seed = alg.random_seed)
-        som.train_batch(data, 100, verbose=True)  
-        #som.train_random(self.dataset.data, 100, verbose=True) # random training
-        e = som.labels_map(data, self.dataset.target)
-        print(e)
-        map_labeled = self.normal_vs_attacks_detection_som(e)
         
-        print(map_labeled)
-
-        results = Result_Som(alg)
-        results.map_label = map_labeled
-        results.detection_rate = self.calculate_detection_rate_som(map_labeled)
-        results.false_alarm = self.calculate_false_alarm_som(map_labeled)
-        print(results.detection_rate)
-        print(results.false_alarm)
-        self.results.append(results)
-        return results.show_results()
-
-    def normal_vs_attacks_detection_som(self, labeled_map : defaultdict):
-        clustered_map = dict() #stores the highest elem for each cluster ['type', normals#, attacks#] 
-        for key in labeled_map:
-            normal = 0
-            attack = 0
-            for d in labeled_map.get(key):
-                if(d != 'normal.'):
-                    attack += labeled_map.get(key).get(d)
-                elif(d != ''):
-                    normal += labeled_map.get(key).get(d)
-            if(normal > attack):
-                clustered_map[key] = ['normal.', normal, attack]
-            elif(normal < attack):
-                clustered_map[key] = ['attack.', normal, attack]
-            else:
-                print('normal and attack number is the same. messed up')
-        return clustered_map
-
-    def calculate_detection_rate_som(self, clusters_labeled):
-        """ratio of the detected attack records to the total attack records"""
-        detected = 0
-        total = 0
-        for item in clusters_labeled.values():
-            if(item[0] == 'attack.'):
-                detected += item[2]
-            total += item[2]
-        return detected / total
-
-    def calculate_false_alarm_som(self, clusters_labeled):
-        """the ratio of the normal records detected as the attack record, to total normal records"""
-        not_detected = 0
-        total = 0
-        for item in clusters_labeled.values():
-            if(item == 'attack.'):
-                not_detected += item[1]
-            total += item[1]
-        return not_detected / total
 
     def get_som_coord_clusters_normal(self):
         """return coordinates for normals and anomalies clusters created in the som
@@ -162,12 +123,12 @@ class Model(object):
             return
 
     def get_current_alg_properties(self):
-        current_alg = self.actual_algorithm
+        current_alg = self.current_algorithm
         return current_alg.get_properties()
     
     def get_current_alg_properties_choices(self):
         properties = self.get_current_alg_properties()
-        choices = self.actual_algorithm.get_properties_choices()
+        choices = self.current_algorithm.get_properties_choices()
         for key in choices:
             if not(key in properties):
                 print("mismatch between choice properties and properties for the current algorithm")
@@ -175,7 +136,7 @@ class Model(object):
         return choices
 
     def modify_properties_alg(self, properties):
-        self.actual_algorithm.set_properties(properties)
+        self.current_algorithm.set_properties(properties)
 
     def dataset_path_to_name(self, path):
         path_splitted = path.split('/')
@@ -313,6 +274,10 @@ class Model(object):
     #        return self.datasets_location[name]
     #    else:
     #        return ''
+
+    def attributes_names(self):
+        return self.dataset.attr_names
+
     def attributes_type(self):
         """attributes types are returned from current dataset"""
         self.dataset.attr_types = self.attributes_type_packing(self.dataset.data)
@@ -537,13 +502,13 @@ class Dataset(object):
         self.name = ''
         self.path = ''
 
-    def set_properties(self, index_label_class = -1, normal_label = 'normal.'):
+    def set_properties(self, normal_label = 'normal.'):
         if len(self.data) != 0:
             self.attr_size = len(self.data[0])
             self.size = len(self.data)
-            self._set_normal_attack_n(index_label_class, normal_label)
+            self._set_normal_attack_n(normal_label)
 
-    def _set_normal_attack_n(self, index_label_class = -1, normal_label = 'normal.'):
+    def _set_normal_attack_n(self, normal_label = 'normal.'):
         """setting the number of normal and attack total connections in the dataset, it can use different index and normal label"""
         c_normal = 0
         c_attack = 0
@@ -578,6 +543,15 @@ class Algorithm(object): #abstract class
 
     def get_properties(self):
         raise NotImplementedError()
+
+    def set_properties(self):
+        return NotImplementedError()
+
+    def copy(self):
+        return NotImplementedError()
+
+    def apply_alg(self):
+        return NotImplementedError()
 
     def set_properties_choices(self, choices : dict): #choices {property : [choices]}
         for key, value in choices.items():
@@ -620,110 +594,221 @@ class Algorithm_Som(Algorithm):
         copy_alg = Algorithm_Som(self.x, self.y, self.sigma, self.learning_rate, self.neighborhood_function, self.random_seed)
         return copy_alg
 
+    def apply_alg(self, dataset):
+        try:
+            np.array(dataset.data[0], dtype = float)
+        except ValueError:
+            print('Not possible to apply SOM on categorical data, transform it')
+            return {}
+
+        #som = MiniSom(6, 6, dataset.attr_size, sigma=1, learning_rate=0.5, neighborhood_function='gaussian')
+        som = MiniSom(alg.x, alg.y, dataset.attr_size, sigma = alg.sigma, learning_rate = alg.learning_rate, neighborhood_function = alg.neighborhood_function, random_seed = alg.random_seed)
+        som.train_batch(data, 100, verbose=True)  
+        #som.train_random(dataset.data, 100, verbose=True) # random training
+        e = som.labels_map(data, dataset.target)
+        print(e)
+        map_labeled = normal_vs_attacks_detection(e)
+        
+        print(map_labeled)
+
+        results = Result_Som(alg)
+        results.map_label = map_labeled
+        results.detection_rate = calculate_detection_rate(map_labeled)
+        results.false_alarm = calculate_false_alarm(map_labeled)
+        print(results.detection_rate)
+        print(results.false_alarm)
+        results.append(results)
+        return results.show_results()
+
+    def normal_vs_attacks_detection(self, labeled_map : defaultdict):
+        clustered_map = dict() #stores the highest elem for each cluster ['type', normals#, attacks#] 
+        for key in labeled_map:
+            normal = 0
+            attack = 0
+            for d in labeled_map.get(key):
+                if(d != 'normal.'):
+                    attack += labeled_map.get(key).get(d)
+                elif(d != ''):
+                    normal += labeled_map.get(key).get(d)
+            if(normal > attack):
+                clustered_map[key] = ['normal.', normal, attack]
+            elif(normal < attack):
+                clustered_map[key] = ['attack.', normal, attack]
+            else:
+                print('normal and attack number is the same. messed up')
+        return clustered_map
+
+    def calculate_detection_rate(self, clusters_labeled):
+        """ratio of the detected attack records to the total attack records"""
+        detected = 0
+        total = 0
+        for item in clusters_labeled.values():
+            if(item[0] == 'attack.'):
+                detected += item[2]
+            total += item[2]
+        return detected / total
+
+    def calculate_false_alarm(self, clusters_labeled):
+        """the ratio of the normal records detected as the attack record, to total normal records"""
+        not_detected = 0
+        total = 0
+        for item in clusters_labeled.values():
+            if(item == 'attack.'):
+                not_detected += item[1]
+            total += item[1]
+        return not_detected / total
+
 class Algorithm_Kmean(Algorithm):
-    def __init__(self):
+    def __init__(self, cluster_n = 8, y = 1):
         super(Algorithm_Kmean, self).__init__()
-        self.cluster_n = 8 #specify initial settings
-        self.outlier_factor = 1
+        self.name = "kmean"
+        self.cluster_n = cluster_n #specify initial settings
+        self.y_power = y
         #variables holding print names for internal settings
         self.cluster_n_print = "Number of clusters"
-        self.outlier_factor_print = "Outlier factor"
+        self.y_power_print = "y"
 
     def get_properties(self):
-        properties = {self.cluster_n_print : self.cluster_n, self.outlier_factor_print: self.outlier_factor}
+        properties = {self.cluster_n_print : self.cluster_n, self.y_power_print: self.y_power}
         return properties
 
-    #def apply_alg(self, dataset):
-    #    y = KMeans(n_clusters = self.clust_n).fit(dataset.data)
-        
-    #    c = [[0 for x in range(2)] for y in range(self.clust_n)]
-    
-    #    for index in range(0, len(dataset.target)):
-    #        c[y.labels_[index]][0] += 1 #add 1 to the counter of elements in each cluster
-    #        if dataset.target[index] in ['normal.', 'normal'] :
-    #            c[y.labels_[index]][1] += 1
-        
-    #    print('Clusters:' + str(clust_n))
-    #    print(c) #print [total_n_elements per cluster, n_normals per cluster]
-    
-    #    #calculate_stdev(y.n_clusters, y, dataset.data, len(dataset.data[0]), len(dataset.data), list(zip(*c))[0])
-    #    normal_instances = len(dataset.data) * 0.985
-    #    f = open(r"C:\Users\User\Downloads\kddcup.dataset.data_10_percent\tests\y_variance_result.csv", "a")
-    #    f.write('Cluster: ' + str(clust_n) + '\n')
-    #    for i in [-8,-4,-1,1,4,8]:
-    #        of = outlier_factor(y.cluster_centers_, i)
-    #        labels = of_label_clusters(list(zip(*c))[0], of, normal_instances)
-    #        detection_rate = calculate_detection_rate(labels, y.labels_, dataset.target)
-    #        false_alarm = calculate_false_alarm(labels, y.labels_, dataset.target)
-    #        print(labels)
-    #        print(of)
-    #        print(detection_rate)
-    #        print(false_alarm)
+    def set_properties(self, properties):
+        """set properties from dictionary like structure (expecting correct type value in the dictionary"""
+        self.cluster_n = properties[self.cluster_n_print]
+        self.y_power = properties[self.y_power_print]
 
-    #def calculate_outlier_factor(cluster_centers, y = self.outlier_factor):
-    #    """calculate the average distance from cluster to others"""
-    #    distances = []
-    #    for index in range(len(cluster_centers)):
-    #        distance_clust = 0.0
-    #        for inn in range(len(cluster_centers)):
-    #            distance_attr = 0.0
-    #            if (inn != index):
+    def copy(self):
+        copy_alg = Algorithm_Kmean(self.cluster_n, self.y_power)
+        return copy_alg
+
+    def apply_alg(self, dataset):
+        try:
+            np.array(dataset.data[0], dtype = float)
+        except ValueError:
+            print("Not possible utilize categorical values in this algorithm, transform them")
+            return {}
+
+        y = KMeans(n_clusters = self.cluster_n).fit(dataset.data)
+        
+        c = [[0 for x in range(2)] for y in range(self.cluster_n)]
+    
+        for index in range(0, len(dataset.target)):
+            c[y.labels_[index]][0] += 1 #add 1 to the counter of elements in each cluster
+            if dataset.target[index] in ['normal.', 'normal'] :
+                c[y.labels_[index]][1] += 1
+        
+        print('Clusters:' + str(self.cluster_n))
+        print(c) #print [total_n_elements per cluster, n_normals per cluster]
+    
+        #calculate_stdev(y.n_clusters, y, dataset.data, len(dataset.data[0]), len(dataset.data), list(zip(*c))[0])
+        normal_instances = dataset.normal_n
+        
+        of = self.calculate_outlier_factor(y.cluster_centers_, self.y_power)
+        labels = self.of_label_clusters(list(zip(*c))[0], of, normal_instances)
+        detection_rate = self.calculate_detection_rate(labels, y.labels_, dataset.target)
+        false_alarm = self.calculate_false_alarm(labels, y.labels_, dataset.target)
+        print(labels)
+        print(of)
+        print(detection_rate)
+        print(false_alarm)
+        results = Result_Kmean(self)
+        results.detection_rate = detection_rate
+        results.false_alarm = false_alarm
+        return results.show_results()
+
+    def of_label_clusters(self, clusters_pop, of, normal_instances):
+        """gives labels to clusters based on the of calculated. clusters_pop = population of each cluster, normal_instances = number of normal instances in the dataset"""
+        labels = ['' for x in range(len(of))]
+        centers_m = [[x] for x in of]
+        total = 0.0
+        for index, elem in enumerate(centers_m): #add index at the end of each center, so it can be retrieved if center_m is modified
+            elem.append(index)
+
+        while(total < normal_instances and len(centers_m) != 0):
+            min = centers_m[0][0]
+            min_index = 0 #index of minimum element (on centers_m)
+            for index in range(1, len(centers_m)):
+                if(centers_m[index][0] < min):
+                    min_index = index
+                    min = centers_m[index][0]
+    
+            total += clusters_pop[min_index]
+    
+            if(total < normal_instances):
+                labels[centers_m[min_index][1]] = 'normal.'
+            else:
+                for elem in centers_m:
+                    labels[elem[len(elem) - 1]] = 'attack.'
+            #if(len(centers_m))
+            del centers_m[min_index]
+        return labels
+
+    def calculate_outlier_factor(self, cluster_centers, y = None):
+        """calculate the average distance from cluster to others"""
+        if y == None: #in case user did not provide value, use default stored in member variable
+            y = self.y_power
+        distances = []
+        for index in range(len(cluster_centers)):
+            distance_clust = 0.0
+            for inn in range(len(cluster_centers)):
+                distance_attr = 0.0
+                if (inn != index):
                 
-    #                for index_attr in range(len(cluster_centers[index])):
-    #                    distance_attr += abs(cluster_centers[index][index_attr] - cluster_centers[inn][index_attr])
-    #                distance_attr = pow(pow(distance_attr, 2) / len(cluster_centers[index]), 0.5)
-    #                distance_clust += pow(distance_attr, y)
-    #        distances.append(pow(distance_clust / (len(cluster_centers) - 1), 1 / y))
-    #    return distances
+                    for index_attr in range(len(cluster_centers[index])):
+                        distance_attr += abs(cluster_centers[index][index_attr] - cluster_centers[inn][index_attr])
+                    distance_attr = pow(pow(distance_attr, 2) / len(cluster_centers[index]), 0.5)
+                    distance_clust += pow(distance_attr, y)
+            distances.append(pow(distance_clust / (len(cluster_centers) - 1), 1 / y))
+        return distances
 
-    #def calculate_detection_rate(clusters_labeled, clusters, labels):
-    #    """ratio of the detected attack records to the total attack records"""
-    #    #clusters_attack = [] #[indexes of attacks]
-    #    #for index in range(len(clusters_labeled)):
-    #    #    if(clusters_labeled[index] != 'normal.'):
-    #    #        clusters_attack.append(index)
+    def calculate_detection_rate(self, clusters_labeled, clusters, labels):
+        """ratio of the detected attack records to the total attack records"""
+        #clusters_attack = [] #[indexes of attacks]
+        #for index in range(len(clusters_labeled)):
+        #    if(clusters_labeled[index] != 'normal.'):
+        #        clusters_attack.append(index)
     
-    #    attacks_detected = 0
-    #    attacks_total = 0
-    #    for index in range(len(labels)):
-    #        if labels[index] != 'normal.':
-    #            attacks_total += 1
-    #            if clusters_labeled[clusters[index]] != 'normal.':
-    #                attacks_detected += 1
-    #    #return [attacks_detected, attacks_total]
-    #    return attacks_detected / attacks_total
+        attacks_detected = 0
+        attacks_total = 0
+        for index in range(len(labels)):
+            if labels[index] != 'normal.':
+                attacks_total += 1
+                if clusters_labeled[clusters[index]] != 'normal.':
+                    attacks_detected += 1
+        #return [attacks_detected, attacks_total]
+        return attacks_detected / attacks_total
 
-    #def calculate_false_alarm(clusters_labeled, clusters, labels):
-    #    """the ratio of the normal records detected as the attack record, to total normal records"""
-    #    normal_total = 0
-    #    normal_as_attack = 0 #detected attack, but it is actually a normal
+    def calculate_false_alarm(self, clusters_labeled, clusters, labels):
+        """the ratio of the normal records detected as the attack record, to total normal records"""
+        normal_total = 0
+        normal_as_attack = 0 #detected attack, but it is actually a normal
 
-    #    for index in range(len(labels)):
-    #        if labels[index] == 'normal.':
-    #            normal_total += 1
-    #            if clusters_labeled[clusters[index]] != 'normal.':
-    #                normal_as_attack += 1
-    #    #return [normal_as_attack, normal_total]
-    #    return normal_as_attack / normal_total
+        for index in range(len(labels)):
+            if labels[index] == 'normal.':
+                normal_total += 1
+                if clusters_labeled[clusters[index]] != 'normal.':
+                    normal_as_attack += 1
+        #return [normal_as_attack, normal_total]
+        return normal_as_attack / normal_total
 
-    #def calculate_stdev(n_clusters, y, dataset, attr_size, size, n_elem_clusters):
-    #    #i = [0] * n_clusters #n. of total elements
-    #    count = [[0 for x in range(attr_size)] for y in range(n_clusters)] #stdev for each feature
-    #    for index in range(size):
-    #        #i[y.labels_[index]] += 1
-    #        for inn in range(attr_size):
-    #            count[y.labels_[index]][inn] += pow(- y.cluster_centers_[y.labels_[index]][inn] + dataset[index][inn], 2) 
+    def calculate_stdev(self, n_clusters, y, dataset, attr_size, size, n_elem_clusters):
+        #i = [0] * n_clusters #n. of total elements
+        count = [[0 for x in range(attr_size)] for y in range(n_clusters)] #stdev for each feature
+        for index in range(size):
+            #i[y.labels_[index]] += 1
+            for inn in range(attr_size):
+                count[y.labels_[index]][inn] += pow(- y.cluster_centers_[y.labels_[index]][inn] + dataset[index][inn], 2) 
     
-    #    for index in range(n_clusters):
-    #        for inn in range(attr_size):
-    #            count[index][inn] /= n_elem_clusters[index]
-    #            count[index][inn] = math.sqrt(count[index][inn])
+        for index in range(n_clusters):
+            for inn in range(attr_size):
+                count[index][inn] /= n_elem_clusters[index]
+                count[index][inn] = math.sqrt(count[index][inn])
 
-    #    #print(count)
-    #    total = [0] * n_clusters
-    #    for index in range(n_clusters): #useful in case the dataset has been normalized
-    #        total[index] = sum(count[index])
-    #    print(total)
+        #print(count)
+        total = [0] * n_clusters
+        for index in range(n_clusters): #useful in case the dataset has been normalized
+            total[index] = sum(count[index])
+        print(total)
 
 class Result_Alg(object):
     def __init__(self):
@@ -748,12 +833,13 @@ class Result_Som(Result_Alg):
 
 
 class Result_Kmean(Result_Alg):
-    def __init__(self):
+    def __init__(self, alg_kmean):
         super(Result_Kmean, self).__init__()
-        self.algorith_settings = Algorithm_Kmean()
+        self.algorith_settings = alg_kmean.copy()
 
-    def show_results():
-        results = super(Result_Som, self).show_results()
+    def show_results(self):
+        """returning results to be shown on view using a dictionary"""
+        results = super(Result_Kmean, self).show_results()
         #add other kmean results needed to be shown in view
         return results
     
