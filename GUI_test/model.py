@@ -29,7 +29,7 @@ class Model(object):
         #SOM
         som = Algorithm_Som()
         #som.set_properties({'x': 6, 'y': 6, 'sigma': 1.0, 'learning_rate': 0.5, 'neighborhood_function': 'gaussian', 'random_seed' : None})
-        som.set_properties_choices({'neighborhood_function': ['gaussian','mexican_hat','bubble','triangle']})
+        som.set_properties_choices({som.neighborhood_function_print: ['gaussian','mexican_hat','bubble','triangle']})
         self.algorithms.add(som)
     #def encode_bytes_to_string(self, dataset): #Too slow, going to encode only the needed ones in the controller (~MVC)
     #    for item in dataset:
@@ -167,6 +167,9 @@ class Model(object):
                 return
         return choices
 
+    def modify_properties_alg(self, properties):
+        self.actual_algorithm.set_properties(properties)
+
     def dataset_path_to_name(self, path):
         path_splitted = path.split('/')
         name = (path_splitted[len(path_splitted) - 1]).split('.')[0] #last part of directory, less the extension
@@ -264,7 +267,7 @@ class Model(object):
             print('Reading dataset')
             self.dataset.data = np.asarray([[1,1.5],[2,2.5],[10,3.5],[25,9.5]])
             self.dataset.target = np.asarray(['normal.', 'normal.', 'attack.', 'attack.'])
-            self.dataset.set_attribute_names = np.asarray(['a','b'])
+            self.dataset.set_attribute_names(np.asarray(['a','b']))
             self.dataset.set_properties()
             self.dataset.set_name_path('TEST', 'inner')
             self.datasets_location['TEST'] = 'inner'
@@ -431,6 +434,7 @@ class Model(object):
     def remove_attributes_dataset(self, attributes):
         if isinstance(self.dataset.data, np.ndarray):
             self.dataset.data = np.delete(self.dataset.data, attributes, 1)
+            self.dataset.attr_names = np.delete(self.dataset.attr_names, attributes, 0)
             self.dataset.set_properties()
             print('attributes :', attributes, 'deleted')
             print(self.dataset.attr_size, self.dataset.data[0])
@@ -553,7 +557,7 @@ class Algorithm(object): #abstract class
 
     def set_properties_choices(self, choices : dict): #choices {property : [choices]}
         for key, value in choices.items():
-            self.properties_choices[str.lower(str(key))] = value
+            self.properties_choices[(str(key))] = value
 
 class Algorithm_Som(Algorithm):
     def __init__(self, x = 6, y = 6, sigma = 1.0, learning_rate = 0.5, neighborhood_function = 'gaussian', random_seed = None): #intial settings
@@ -566,8 +570,26 @@ class Algorithm_Som(Algorithm):
         self.neighborhood_function = neighborhood_function
         self.random_seed = random_seed
 
+        #variables holding print names for internal settings
+        self.x_print = 'Map Width'
+        self.y_print = 'Map Height'
+        self.sigma_print = 'Sigma'
+        self.learning_rate_print = 'Learning rate'
+        self.neighborhood_function_print = 'Neighborhood function'
+        self.random_seed_print = 'Random seed'
+
+    def set_properties(self, properties):
+        """set properties from dictionary like structure (expecting correct type value in the dictionary"""
+        self.x = properties[self.x_print]
+        self.y = properties[self.y_print]
+        self.sigma = properties[self.sigma_print]
+        self.learning_rate = properties[self.learning_rate_print]
+        self.neighborhood_function = properties[self.neighborhood_function_print]
+        self.random_seed = None if properties[self.random_seed_print] == 'None' else properties[self.random_seed_print] #specifically check for None since it is default value and stored as a string
+
+
     def get_properties(self):
-        properties = {'x': self.x, 'y': self.y, 'sigma': self.sigma, 'learning_rate': self.learning_rate, 'neighborhood_function': self.neighborhood_function, 'random_seed' : self.random_seed}
+        properties = {self.x_print: self.x, self.y_print: self.y, self.sigma_print: self.sigma, self.learning_rate_print: self.learning_rate, self.neighborhood_function_print: self.neighborhood_function, self.random_seed_print : self.random_seed}
         return properties
 
     def copy(self):

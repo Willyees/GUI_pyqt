@@ -131,3 +131,7 @@ class Controller(object):
         pass
         #get algorithm from view
         #run algorithm
+
+    def modify_properties_alg(self):
+        properties = self.view.get_properties_modified()
+        self.model.modify_properties_alg(properties)

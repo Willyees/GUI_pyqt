@@ -11,6 +11,7 @@ class View(object):
         self.listener = EventListener()
         self.app = QApplication([])
         self.window = QWidget()
+        self.window.setMinimumSize(400,400)
         self.second_window : QWidget()
         self.additional_windows = []
         self.attribute_checked = 0
@@ -84,12 +85,12 @@ class View(object):
         
         #Group button right
         layout_button = QVBoxLayout()
-        alg_menu = QComboBox(objectName = 'alg_menu')
+        alg_menu = QComboBox(objectName = 'alg_menu', maximumWidth = 200)
         alg_menu.addItems(['KMean', 'SOM'])
         
         alg_label = QLabel('Algorithm to apply')
         alg_label.setBuddy(alg_menu)
-        apply_btn = QPushButton('&APPLY', clicked = self.listener.submit_window)
+        apply_btn = QPushButton('&APPLY', clicked = self.listener.submit_window, maximumWidth = 200)
         layout_button.addWidget(alg_label)
         layout_button.addWidget(alg_menu)
         layout_button.addWidget(apply_btn)
@@ -241,7 +242,7 @@ class View(object):
         m = PlotCanvas(self.second_window, width=5, height=4)
         layout_mid.addWidget(m)
         layout_bottom = QVBoxLayout()
-        btn_rerun = QPushButton('RERUN', clicked = self.listener.rerun_algorithm, maximumWidth = 100)
+        btn_rerun = QPushButton('RERUN', clicked = self.listener.submit_window, maximumWidth = 100)
         layout_bottom.addWidget(btn_rerun)
         layout_bottom.setAlignment(btn_rerun, Qt.AlignCenter)
         
@@ -277,10 +278,12 @@ class View(object):
         
         plt.legend()
         plt.show()
+        
     
     def create_new_submit_form_window(self, fields : dict, options_fields : dict):
         """will create a new window with specified fields and default input preloaded in the view"""
-        window = QWidget()
+        window = QWidget(destroyed = self.closed_additional_window)
+        window.setAttribute(Qt.WA_DeleteOnClose)
         main_grid = QGridLayout()
         outer_layout = QVBoxLayout()
         for key, value in fields.items():
@@ -305,7 +308,7 @@ class View(object):
             outer_layout.addWidget(input)
         
         bottom_layout = QHBoxLayout()
-        set_btn = QPushButton('SET')
+        set_btn = QPushButton('SET', objectName = 'btn_set_form', clicked = self.listener.form_submitted)
         set_btn.setMaximumWidth(100)
         bottom_layout.addWidget(set_btn)
         
@@ -314,10 +317,32 @@ class View(object):
         window.setLayout(main_grid)
         self.additional_windows.append(window)
         self.additional_windows[0].show()    
+    
+    def closed_additional_window(self):
+        #remove window from list
+        print("removed window")
+        self.additional_windows.pop()
+
+    def get_properties_modified(self):
+        window = self.additional_windows[len(self.additional_windows) - 1] #get last additional window
+        inputs = window.findChildren(QInputDialog)
+        properties = {}
+        for input in inputs:
+            input_type = input.inputMode()
+            label = input.labelText()
+            if input_type == QInputDialog.TextInput:
+                properties[label] = input.textValue()
+            elif input_type == QInputDialog.IntInput:
+                properties[label] = input.intValue()
+            elif input_type == QInputDialog.DoubleInput:
+                properties[label] = input.doubleValue()
+        window.close()
+        print(properties)
+        return properties
 
     def test(self):
-        self.window.close()
-        
+        pass
+
 class PlotCanvas(FigureCanvas):
  
     def __init__(self, parent=None, width=5, height=4, dpi=100):
@@ -380,4 +405,7 @@ class EventListener(object):
     
     def rerun_algorithm(self):
         self.control.rerun_algorithm()
+
+    def form_submitted(self):
+        self.control.modify_properties_alg()
     
