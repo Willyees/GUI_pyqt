@@ -31,6 +31,7 @@ class View(object):
         label_dataset = QLabel('Datasets')
         label_dataset.setBuddy(cmb_box_dataset)
         btn_import = QPushButton('IMPORT', clicked = self.listener.import_dataset)
+        btn_import_test = QPushButton('Import testset', clicked = self.listener.import_test)
         btn_del_attr = QPushButton('del attr', objectName = 'delbtn', clicked = self.listener.remove_selected_attr, enabled = False)
         btn_ntb = QPushButton('Transform to binary', objectName = 'ntbbtn', clicked = self.listener.nominal_to_binary, enabled = False)
         
@@ -47,6 +48,7 @@ class View(object):
         layout_top_upper.addWidget(label_dataset)
         layout_top_upper.addWidget(cmb_box_dataset)
         layout_top_upper.addWidget(btn_import)
+        layout_top_upper.addWidget(btn_import_test)
         layout_top_upper.addWidget(btn_del_attr)
         layout_top_upper.addWidget(btn_ntb)
         
@@ -404,6 +406,9 @@ class EventListener(object):
     def import_dataset(self):
         print('import btn pressed')
         self.control.import_dataset()
+    
+    def import_test(self):
+        pass
 
     def view_som_map_clusters(self):
         self.control.view_som_map_clusters()

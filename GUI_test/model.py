@@ -13,6 +13,7 @@ class Model(object):
     
     def __init__(self):
         self.dataset = Dataset()
+        self.testing = Dataset()
         self.datasets_location = dict()
         self.datasets_location['KDD99'] = 'inner'
         self.datasets_location['TEST'] = 'inner'
@@ -176,6 +177,26 @@ class Model(object):
     def get_dataset_current_name(self):
         print('current dataset:', self.dataset.name)
         return self.dataset.name
+    
+    def read_testing_set(self, path):
+        if not(os.path.isfile(path)):
+            print("No file matching the directory specified for ", path)
+            return False
+        self.testing = self.read_dataset(file)
+        #not setting the dataset names (this is the testing, which cannot be loaded as a training)
+        return True
+
+
+    def read_training_set(self, path):
+        print('Reading dataset')
+        dataset_loaded = self.read_dataset(path)
+        if(dataset_loaded.attr_size == 0): #if empty dataset, it has not been possible to load it
+            return False
+        self.dataset = dataset_loaded
+
+        self.set_dataset_location(path)
+        return True
+
 
     def read_dataset(self, path):
         if not(self.check_existence_dataset_file(path)): #skipping the open file, if this function already checked that file do not exists
@@ -185,20 +206,19 @@ class Model(object):
             file = open(path, 'r')
         except IOError:
             print("No file present!")
-            return False
-        print('Reading dataset')
+            return Dataset() #return empty dataset
         dataset = []
         target = []
         attr_names = [] #could use a set
         #set attribute names in the dataset (only fist line taken)
         line = file.readline() #add: check that are all different
         line_split = line.replace('\n', '').split(',')
+        print(line_split[len(line_split) -1])
         for attr in line_split:
             if attr in attr_names:
                 print("There is a duplicate attribute name, or the first line is not attribute line")
                 return False
             attr_names.append(attr)
-
         #set attributes values
         #should not assume that index for class label is the last column
         #index_label = (dataset.attr_num - 1) if index == -1 else index 
@@ -207,28 +227,93 @@ class Model(object):
             target.append(temp.pop())
             dataset.append(temp)
         file.close()
-        #start = timer()
-        #setting the type of input data following rules utilized to check type of attributes
-        for i in range(len(dataset)):
-            dataset[i] = [self.transform_to_correct_type(x) for x in dataset[i]] #very slow! might better just check if it is float or not
-            #for inn in range(len(dataset[i])):
-            #    if(self.is_float(dataset[i][inn])):
-            #        dataset[i][inn] = float(dataset[i][inn])
+
+        print(dataset[0])
+        d_m = dataset.copy()
+        start = timer()
+        ##setting the type of input data following rules utilized to check type of attributes
+        #for i in range(len(dataset)):
+        #    #dataset[i] = [self.transform_to_correct_type(x) for x in dataset[i]] #very slow! might better just check if it is float or not
+        #    for inn in range(len(dataset[i])):
+        #        d_m[i][inn] = self.return_type_fast_safe(dataset[i][inn])
         #end = timer()
         #print("timer", str(end - start))
+        #print(dataset[0])
 
-        self.dataset.target = np.asarray(target)
-        self.dataset.data = np.asarray(dataset, dtype = np.dtype(object))
-        self.dataset.set_properties() #some properties not set, still referring to old dataset
-        self.dataset.set_name_path(self.dataset_path_to_name(path), path)
-        self.dataset.set_attribute_names(attr_names)
+        start = timer()
+        #setting the type of input data following rules utilized to check type of attributes
+        for i in range(len(dataset)):
+            #dataset[i] = [self.transform_to_correct_type(x) for x in dataset[i]] #very slow! might better just check if it is float or not
+            for inn in range(len(dataset[i])):
+                d_m[i][inn] = self.return_type_fast(dataset[i][inn])
+        end = timer()
+        print("timer", str(end - start))
+        print(dataset[0])
+
+        #start = timer()
+        ##setting the type of input data following rules utilized to check type of attributes
+        #for i in range(len(dataset)):
+        #    d_m[i] = [self.transform_to_correct_type(x) for x in dataset[i]] #very slow! might better just check if it is float or not
+        #end = timer()
+        #print("timer", str(end - start))
+        #print(dataset[0])
+
+        d = Dataset()
+
+        d.target = np.asarray(target)
+        d.data = np.asarray(dataset, dtype = np.dtype(object))
+        d.set_properties() #some properties not set, still referring to old dataset
+        d.set_name_path(self.dataset_path_to_name(path), path)
+        d.set_attribute_names(attr_names)
         
-        
-        self.set_dataset_location(path)
-        print(self.datasets_location)
-        print(self.dataset.data[0])
-        print(self.dataset.attr_names)
-        return True
+        return d
+
+    def return_type_fast(self, item : str):
+        """improvement in the return_single_attribute. Assume passing string
+           returns converted value into the correct type read from a string"""
+        if(item == ""):
+            print("Attribute value is incorrect: empty")
+            return ""
+
+        if (item.replace('.', '').replace('e', '').replace('-',"").isdecimal()):#working atm, very likely that string inputted do not follow only these paramethers
+        #if(self.is_float(item)): #slower than checking manually
+            if (item.find('.') == -1):
+                    return int(item)
+            else:
+                return float(item)
+        else:
+            return item
+
+    def return_type_fast_safe(self, item):
+        if(item == ""):
+            print("Attribute value is incorrect: empty")
+            return ""
+
+        if(self.is_float(item)): #slower than checking manually
+            if (item.find('.') == -1):
+                    return int(item)
+            else:
+                return float(item)
+        else:
+            return item
+
+    def timer(self):
+        s = "1.2e2"
+        start = timer()
+        for i in range(1000):
+            s.isdecimal()
+        end = timer()
+        print(str(end - start))
+        start = timer()
+        for i in range(1000):
+            s.isnumeric()
+        end = timer()
+        print(str(end - start))
+        start = timer()
+        for i in range(1000):
+            s.isdigit()
+        end = timer()
+        print(str(end - start))
 
     def load_dataset(self, dataset_name):
         """retreives data and works on it"""
@@ -247,11 +332,6 @@ class Model(object):
         elif(dataset_name.upper() == "KDD99"): #special case. Using sklearn lib to load it
             print('Reading dataset')
             kdd = datasets.fetch_kddcup99()
-            #self.dataset.size = len(kdd.data)
-            #self.attr_size = len(kdd.data[0])
-            self.dataset.data = np.asarray(kdd.data)
-            self.dataset.target = np.array(kdd.target, str)
-            print(self.dataset.target[0])
             self.dataset.set_attribute_names = np.asarray(['duration','src_bytes','dst_bytes','land,wrong_fragment','urgent','hot','num_failed_logins','logged_in','num_compromised','root_shell','su_attempted','num_root','num_file_creations','num_shells','num_access_files','num_outbound_cmds','is_host_login','is_guest_login','count','srv_count','serror_rate','srv_serror_rate','rerror_rate','srv_rerror_rate','same_srv_rate','diff_srv_rate','srv_diff_host_rate','dst_host_count','dst_host_srv_count','dst_host_same_srv_rate','dst_host_diff_srv_rate','dst_host_same_src_port_rate','dst_host_srv_diff_host_rate','dst_host_serror_rate','dst_host_srv_serror_rate','dst_host_rerror_rate','dst_host_srv_rerror_rate']) # no class attribute name
             self.dataset.set_properties()
             self.dataset.set_name_path('KDD99', 'inner')
@@ -260,7 +340,9 @@ class Model(object):
             
         else:
             if(dataset_name in self.datasets_location): #only execute if the dataset name is present in the map
-                return self.read_dataset(self.datasets_location[dataset_name])
+                return self.read_training_set(self.datasets_location[dataset_name])
+                
+                
         return True
 
     def is_float(self, value):
@@ -297,8 +379,8 @@ class Model(object):
             print("Attribute value is incorrect: empty")
             return ''
 
-        if ((str(item)).replace('.', '').isdigit()):
-            
+        #if ((str(item)).replace('.', '').isdigit()):
+        if(self.is_float(item)):  
             #if(int(item) == 1 or int(item) == 0):
             if(index != -1 and self.attribute_check_if_binary(index)):
                 #print('Binary')
