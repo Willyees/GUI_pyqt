@@ -30,24 +30,24 @@ class View(object):
         cmb_box_dataset.currentIndexChanged.connect(self.listener.dataset_chosen_changed)#connecting after adding items, so it wont trigger the signal
         label_dataset = QLabel('Datasets')
         label_dataset.setBuddy(cmb_box_dataset)
-        btn_import = QPushButton('IMPORT', clicked = self.listener.import_dataset)
-        btn_import_test = QPushButton('Import testset', clicked = self.listener.import_test)
+        btn_import_training = QPushButton('IMPORT', clicked = self.listener.import_dataset)
+        btn_import_test = QPushButton('Import testset', clicked = self.listener.import_test_set)
         btn_del_attr = QPushButton('del attr', objectName = 'delbtn', clicked = self.listener.remove_selected_attr, enabled = False)
         btn_ntb = QPushButton('Transform to binary', objectName = 'ntbbtn', clicked = self.listener.nominal_to_binary, enabled = False)
         
         #btn_import.setStyleSheet("background : yellow")
-        pal = btn_import.palette()
+        pal = btn_import_training.palette()
         #pal.setColor(QPalette.Active, QPalette.Button, QColor(Qt.yellow))
-        btn_import.setAutoFillBackground(True)
+        btn_import_training.setAutoFillBackground(True)
         
-        btn_import.setPalette(pal)
-        btn_import.update()
+        btn_import_training.setPalette(pal)
+        btn_import_training.update()
 
         #
         layout_top_upper = QHBoxLayout()
         layout_top_upper.addWidget(label_dataset)
         layout_top_upper.addWidget(cmb_box_dataset)
-        layout_top_upper.addWidget(btn_import)
+        layout_top_upper.addWidget(btn_import_training)
         layout_top_upper.addWidget(btn_import_test)
         layout_top_upper.addWidget(btn_del_attr)
         layout_top_upper.addWidget(btn_ntb)
@@ -57,7 +57,12 @@ class View(object):
         layout_top_upper.addWidget(btn_test)
         #
         
-        
+        #layout testing dataset
+        layout_testing = QHBoxLayout()
+        testing = QLabel('Selected testing set: None', objectName = "label_testing")
+        testing.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
+        layout_testing.addWidget(testing)
+        #
         #Group top left
         top_left_group = QGroupBox('Attributes', objectName = 'top_left_group')
         layout_top = QVBoxLayout()
@@ -101,8 +106,9 @@ class View(object):
         main_layout.addLayout(layout_top_upper, 0, 0, 1, 1) #from row, from col, widthspan, to hightspan (1 is no span)
         main_layout.addWidget(top_left_group, 1, 0, 2, 1)
         main_layout.addWidget(right_group, 1, 1)
+        
         main_layout.addLayout(layout_button, 2, 1, Qt.AlignBottom)
-
+        main_layout.addLayout(layout_testing, 3, 0, 1, 1)
         self.window.setLayout(main_layout)
         
     
@@ -350,6 +356,10 @@ class View(object):
         print(properties)
         return properties
 
+    def set_training_set(self, name):
+        train : QLabel = self.window.findChild(QLabel, name = "label_testing")
+        train.setText("Selected testing set: \"" + name + "\"")
+
     def test(self):
         pass
 
@@ -405,10 +415,10 @@ class EventListener(object):
    
     def import_dataset(self):
         print('import btn pressed')
-        self.control.import_dataset()
+        self.control.import_training_set()
     
-    def import_test(self):
-        pass
+    def import_test_set(self):
+        self.control.import_test_set()
 
     def view_som_map_clusters(self):
         self.control.view_som_map_clusters()

@@ -13,7 +13,7 @@ class Model(object):
     
     def __init__(self):
         self.dataset = Dataset()
-        self.testing = Dataset()
+        self.testing_set = Dataset()
         self.datasets_location = dict()
         self.datasets_location['KDD99'] = 'inner'
         self.datasets_location['TEST'] = 'inner'
@@ -35,6 +35,10 @@ class Model(object):
     
     def apply_algorithm(self, algorithm):
         if(self.dataset.size > 0):
+            if(self.dataset.attr_size != self.testing_set.attr_size):
+                print("different attributes between training and testing set")
+                return {}
+
             alg : Algorithm
             if self.current_algorithm.name != '':
                 alg = self.current_algorithm
@@ -45,7 +49,7 @@ class Model(object):
                         self.current_algorithm = alg
                         break
 
-            return alg.apply_alg(self.dataset)
+            return alg.apply_alg(self.dataset, self.testing_set)
             
         else:
             #show message box error
@@ -55,7 +59,7 @@ class Model(object):
     
     def apply_current_algorithm(self):
         if(self.dataset.size > 0):
-            self.current_algortithm.apply_alg(self.dataset)
+            self.current_algortithm.apply_alg(self.dataset, self.testing_set)
         else:
         #show message box error
             print('no dataset loaded! Cannot perform algorithm')
@@ -182,8 +186,11 @@ class Model(object):
         if not(os.path.isfile(path)):
             print("No file matching the directory specified for ", path)
             return False
-        self.testing = self.read_dataset(file)
-        #not setting the dataset names (this is the testing, which cannot be loaded as a training)
+        testing_loaded = self.read_dataset(path)
+        if(testing_loaded.attr_size == 0):
+            return False
+        self.testing_set = testing_loaded
+        #not setting the dataset names (this is the testing, which cannot be loaded as a training usign the combobox)
         return True
 
 
@@ -200,7 +207,7 @@ class Model(object):
 
     def read_dataset(self, path):
         if not(self.check_existence_dataset_file(path)): #skipping the open file, if this function already checked that file do not exists
-            return False
+            return Dataset()
         #use try catch, in case has been removed in the time being
         try:
             file = open(path, 'r')
@@ -217,7 +224,7 @@ class Model(object):
         for attr in line_split:
             if attr in attr_names:
                 print("There is a duplicate attribute name, or the first line is not attribute line")
-                return False
+                return Dataset()
             attr_names.append(attr)
         #set attributes values
         #should not assume that index for class label is the last column
@@ -632,7 +639,7 @@ class Algorithm(object): #abstract class
     def copy(self):
         return NotImplementedError()
 
-    def apply_alg(self):
+    def apply_alg(self, training_set, testing_set):
         return NotImplementedError()
 
     def set_properties_choices(self, choices : dict): #choices {property : [choices]}
@@ -763,7 +770,7 @@ class Algorithm_Kmean(Algorithm):
         copy_alg = Algorithm_Kmean(self.cluster_n, self.y_power)
         return copy_alg
 
-    def apply_alg(self, dataset):
+    def apply_alg(self, dataset, testing):
         try:
             np.array(dataset.data[0], dtype = float)
         except ValueError:
@@ -786,10 +793,11 @@ class Algorithm_Kmean(Algorithm):
         normal_instances = dataset.normal_n
         
         of = self.calculate_outlier_factor(y.cluster_centers_, self.y_power)
-        labels = self.of_label_clusters(list(zip(*c))[0], of, normal_instances)
-        detection_rate = self.calculate_detection_rate(labels, y.labels_, dataset.target)
-        false_alarm = self.calculate_false_alarm(labels, y.labels_, dataset.target)
-        print(labels)
+        labels_clusters = self.of_label_clusters(list(zip(*c))[0], of, normal_instances)
+        labels = y.predict(testing.data)
+        detection_rate = self.calculate_detection_rate(labels_clusters, labels, testing.target)
+        false_alarm = self.calculate_false_alarm(labels_clusters, labels, testing.target)
+        print(labels_clusters)
         print(of)
         print(detection_rate)
         print(false_alarm)

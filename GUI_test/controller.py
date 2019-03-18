@@ -94,21 +94,24 @@ class Controller(object):
         if(self.model.attr_nominal_to_binary(attr_checked)): #also removing attribute interally (in model) if it is a category attribute
             self.show_dataset_attributes()
 
-    def import_dataset(self):
+    def import_training_set(self):
         dataset_path = self.view.get_file_selected(filter = 'Dataset files (*.csv)', directory = 'C:\\Users\\User\\Downloads\\kddcup.data_10_percent')
         if(dataset_path): #check that user selected a file
-            self.model.read_training_set(dataset_path[0])
-            self.show_dataset_attributes()
-            names = self.model.get_dataset_names()
-            self.view.set_cmbbox_datasets(names, self.model.get_dataset_current_name())
+            if(self.model.read_training_set(dataset_path[0])):
+                self.show_dataset_attributes()
+                names = self.model.get_dataset_names()
+                self.view.set_cmbbox_datasets(names, self.model.get_dataset_current_name())
             #read the file in the model and set it as dataset
             #store file location along with the name in model
             #update cmbbox view with the new dataset name
     
-    def import_testset(self):
+    def import_test_set(self):
         test_set = self.view.get_file_selected(filter = 'Dataset files (*.csv)', directory = 'C:\\Users\\User\\Downloads\\kddcup.data_10_percent')
         if(test_set):
-            self.model.read_training_set(test_set)
+            if(self.model.read_testing_set(test_set[0])):
+                name = self.model.dataset_path_to_name(test_set[0])
+                self.view.set_training_set(name)
+        
 
     def view_som_map_clusters(self):
         coords_map_label = self.model.get_som_coord_clusters_normal()
@@ -133,7 +136,7 @@ class Controller(object):
         #show window with data
         
 
-    def rerun_algorithm(self):
+    def rerun_algorithm(self):\
         pass
         #get algorithm from view
         #run algorithm
