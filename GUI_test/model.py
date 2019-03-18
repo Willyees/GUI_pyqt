@@ -683,31 +683,60 @@ class Algorithm_Som(Algorithm):
         copy_alg = Algorithm_Som(self.x, self.y, self.sigma, self.learning_rate, self.neighborhood_function, self.random_seed)
         return copy_alg
 
-    def apply_alg(self, dataset):
+    def apply_alg(self, dataset, testing):
         try:
-            np.array(dataset.data[0], dtype = float)
+            dataset.data = np.array(dataset.data, dtype = float)
+            testing.data = np.array(testing.data, dtype = float)
         except ValueError:
             print('Not possible to apply SOM on categorical data, transform it')
             return {}
 
         #som = MiniSom(6, 6, dataset.attr_size, sigma=1, learning_rate=0.5, neighborhood_function='gaussian')
-        som = MiniSom(alg.x, alg.y, dataset.attr_size, sigma = alg.sigma, learning_rate = alg.learning_rate, neighborhood_function = alg.neighborhood_function, random_seed = alg.random_seed)
-        som.train_batch(data, 100, verbose=True)  
-        #som.train_random(dataset.data, 100, verbose=True) # random training
-        e = som.labels_map(data, dataset.target)
-        print(e)
-        map_labeled = normal_vs_attacks_detection(e)
-        
-        print(map_labeled)
+        som = MiniSom(self.x, self.y, dataset.attr_size, sigma = self.sigma, learning_rate = self.learning_rate, neighborhood_function = self.neighborhood_function, random_seed = self.random_seed)
+        som.train_batch(dataset.data, 100, verbose=True)  
 
-        results = Result_Som(alg)
-        results.map_label = map_labeled
-        results.detection_rate = calculate_detection_rate(map_labeled)
-        results.false_alarm = calculate_false_alarm(map_labeled)
+        #som.train_random(dataset.data, 100, verbose=True) # random training
+        e = som.labels_map(dataset.data, dataset.target)
+        print(e)
+        
+        map_labeled = self.normal_vs_attacks_detection(e)
+        print(map_labeled)
+        e_testing = som.labels_map(testing.data, testing.target)
+        print(e_testing)
+        results = self.calc_results(som, map_labeled, testing)
+        
+
+        #win_map = som.win_map(testing.data)
+        #print(map_labeled)
+        #print(win_map)
+
+        #results = Result_Som(self)
+        #results.map_label = map_labeled
+        #results.detection_rate = self.calculate_detection_rate(map_labeled)
+        #results.false_alarm = self.calculate_false_alarm(map_labeled)
         print(results.detection_rate)
         print(results.false_alarm)
-        results.append(results)
         return results.show_results()
+
+    def calc_results(self, som : MiniSom, cluster_label, testing):
+            attack = 0
+            normal_as_attack = 0 #false negative
+            for index, elem in enumerate(testing.data):
+                coord = som.winner(elem)
+                if(coord in cluster_label):
+                    if(cluster_label[coord][0] == 'attack.'):
+                        if(testing.target[index] == 'attack.'):
+                            attack += 1
+                        else:
+                            normal_as_attack += 1
+                else:
+                    print("training elem not in cluster named")
+            results = Result_Som(self)
+            detection_rate = attack / testing.attack_n
+            false_alarm = normal_as_attack / testing.normal_n
+            results.detection_rate = detection_rate
+            results.false_alarm = false_alarm
+            return results
 
     def normal_vs_attacks_detection(self, labeled_map : defaultdict):
         clustered_map = dict() #stores the highest elem for each cluster ['type', normals#, attacks#] 
@@ -728,7 +757,8 @@ class Algorithm_Som(Algorithm):
         return clustered_map
 
     def calculate_detection_rate(self, clusters_labeled):
-        """ratio of the detected attack records to the total attack records"""
+        """ratio of the detected attack records to the total attack records 
+            clusters_labeled: (x,y):['type', normals#, attacks#] ,.."""
         detected = 0
         total = 0
         for item in clusters_labeled.values():

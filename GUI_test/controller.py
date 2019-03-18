@@ -144,3 +144,8 @@ class Controller(object):
     def modify_properties_alg(self):
         properties = self.view.get_properties_modified()
         self.model.modify_properties_alg(properties)
+
+    def script(self):
+        training = self.model.read_training_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\filtered_freq_normmax_names.csv")
+        testing = self.model.read_testing_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\tests\test_freq_filtered_maxnorm_names.csv")
+        self.model.apply_algorithm("som")
