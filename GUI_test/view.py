@@ -16,7 +16,7 @@ class View(object):
         self.additional_windows = []
         self.attribute_checked = 0
       
-    def startView(self, dataset_names):
+    def startView(self, dataset_names, algorithm_names):
         main_layout = QGridLayout()
         
         #upper top left
@@ -93,7 +93,7 @@ class View(object):
         #Group button right
         layout_button = QVBoxLayout()
         alg_menu = QComboBox(objectName = 'alg_menu', maximumWidth = 200)
-        alg_menu.addItems(['KMean', 'SOM'])
+        alg_menu.addItems(algorithm_names)
         
         alg_label = QLabel('Algorithm to apply')
         alg_label.setBuddy(alg_menu)

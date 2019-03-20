@@ -3,7 +3,7 @@ import math
 import numpy as np
 import os.path
 from sklearn.cluster import KMeans
-from sklearn.metrics.pairwise import euclidean_distances
+from sklearn.metrics.pairwise import euclidean_distances, manhattan_distances
 from sklearn import preprocessing
 import math
 from minisom import MiniSom
@@ -34,6 +34,10 @@ class Model(object):
         #som.set_properties({'x': 6, 'y': 6, 'sigma': 1.0, 'learning_rate': 0.5, 'neighborhood_function': 'gaussian', 'random_seed' : None}) #adding them internally to the object
         som.set_properties_choices({som.neighborhood_function_print: ['gaussian','mexican_hat','bubble','triangle']})
         self.algorithms.add(som)
+        #Fixed With Clust
+        fixed_width = Fixed_Width_Clustering(width = 2.5)
+        fixed_width.set_properties_choices({fixed_width.distance_alg_print: ['euclidean', 'manhattan']})
+        self.algorithms.add(fixed_width)
     
     def apply_algorithm(self, algorithm):
         if(self.dataset.size > 0):
@@ -179,6 +183,12 @@ class Model(object):
 
     def get_dataset_names(self):
         return list(self.datasets_location.keys())
+
+    def get_algorithm_names(self):
+        l = []
+        for alg in self.algorithms:
+            l.append(alg.name)
+        return l
 
     def get_dataset_current_name(self):
         print('current dataset:', self.dataset.name)
@@ -980,31 +990,63 @@ class Algorithm_Kmean(Algorithm):
         print(total)
 
 class Fixed_Width_Clustering(Algorithm):
-    def __init__(self, width):
+    def __init__(self, width, distance_alg = 'euclidean'):
+        super(Fixed_Width_Clustering, self).__init__()
         #set intial clusters set
-        self.clusters = []
+        self.name = 'fixed width clustering'
+        self._clusters = []
+        self._distance_func = self.calculate_distance_to_clusters_euclidean
         self.fixed_width = width
+        self.distance_alg = distance_alg
+        #Show properties
+        self.fixed_width_print = "Fixed width"
+        self.distance_alg_print = "Distance algorithm"
 
     def get_properties(self):
-        pass
-        #properties = {self.cluster_n_print : self.cluster_n, self.y_power_print: self.y_power}
-        #return properties
+        properties = {self.fixed_width_print : self.fixed_width, self.distance_alg_print : self.distance_alg}
+        return properties
 
     def set_properties(self, properties):
-        pass
-        #"""set properties from dictionary like structure (expecting correct type value in the dictionary"""
-        #self.cluster_n = properties[self.cluster_n_print]
-        #self.y_power = properties[self.y_power_print]
+        """set properties from dictionary like structure (expecting correct type value in the dictionary"""
+        self.fixed_width = properties[self.fixed_width_print]
+        self.distance_alg = properties[self.distance_alg_print]
+        
 
     def copy(self):
         copy_alg = Fixed_Width_Clustering(self.fixed_width)
         return copy_alg
+    
+    def apply_alg(self, training, testing):
+        train_cluster_labels = self.train_alg_labels(training.data, training.target)
+        test_map_label = self.test_alg_label(testing.data, testing.target)
+        map_labels = list(zip(list(zip(*train_cluster_labels))[0],test_map_label))
+        out = []
+        for cluster in map_labels:#a giant mess, fix it using a proper structure
+            temp = [cluster[0]]
+            for index in range(len(cluster[1])):
+                temp.append(cluster[1][index])
+            out.append(temp)
+    
+        results = Result_Fixed_Width_Clustering(self)
+        detection_rate = self.calculate_detection_rate(out)
+        false_alarm = self.calculate_false_alarm(out)
+        results.detection_rate = detection_rate
+        results.false_alarm = false_alarm
+        print(detection_rate)
+        print(false_alarm)
+        return results.show_results()
 
     def add_cluster(self, centroid):
-        self.clusters.append(centroid)
+        self._clusters.append(centroid)
+    
+    def calculate_distance_to_clusters_euclidean(self, record):
+        return euclidean_distances(record, self._clusters)
+    
+    def calculate_distance_to_clusters_manhattan(self, record):
+        return manhattan_distances(record, self._clusters)
     
     def calculate_distance_to_clusters(self, record):
-        return euclidean_distances(record, self.clusters)
+        return self._distance_func(record)
 
     def get_closest_cluster(self, record):
         distances = self.calculate_distance_to_clusters([record])
@@ -1018,8 +1060,16 @@ class Fixed_Width_Clustering(Algorithm):
                 min_index = index
         return min_index
 
+    def set_distance_func(self):
+        if(self.distance_alg == 'euclidean'):
+            self._distance_func = self.calculate_distance_to_clusters_euclidean
+        elif(self.distance_alg == 'manhattan'):
+            self._distance_func = self.calculate_distance_to_clusters_manhattan
+
+
     def train_alg(self, training):
         print("Running Algorithm")
+        self.set_distance_func()
         self.add_cluster(training[len(training) -1]) #better to pick it randomly | center_id = random_state.randint(n_samples)
         labels = [0]
         for index in range(len(training) - 1):
@@ -1030,13 +1080,13 @@ class Fixed_Width_Clustering(Algorithm):
                  pass
              else:
                  self.add_cluster(training[index])
-                 labels.append(len(self.clusters) - 1)
-                 print("added: n.", len(self.clusters))
+                 labels.append(len(self._clusters) - 1)
+                 print("added: n.", len(self._clusters))
         return labels
 
     def train_alg_labels(self, training, labels):
         clusters_labels = self.train_alg(training)
-        temp = [['',0,0] for x in range(len(self.clusters))] #['type', normal#, attack#]
+        temp = [['',0,0] for x in range(len(self._clusters))] #['type', normal#, attack#]
 
         for index in range(len(clusters_labels)):
             if(labels[index] == "normal."):
@@ -1062,7 +1112,7 @@ class Fixed_Width_Clustering(Algorithm):
     
     def test_alg_label(self, testing, labels):
         clusters = self.test_alg(testing)
-        map_labels = [[0,0] for x in range(len(self.clusters))] #[[normals#, attacks#], [..]]
+        map_labels = [[0,0] for x in range(len(self._clusters))] #[[normals#, attacks#], [..]]
         for index in range(len(clusters)):
             if(labels[index] == 'normal.'):
                 map_labels[clusters[index]][0] += 1
@@ -1127,4 +1177,11 @@ class Result_Kmean(Result_Alg):
         #add other kmean results needed to be shown in view
         return results
     
+class Result_Fixed_Width_Clustering(Result_Alg):
+    def __init__(self, fixed_width_alg):
+        super(Result_Fixed_Width_Clustering, self).__init__()
+        self.algorith_settings = fixed_width_alg.copy()
 
+    def show_results(self):
+        results = super(Result_Fixed_Width_Clustering, self).show_results()
+        return results

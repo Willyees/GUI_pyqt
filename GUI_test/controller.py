@@ -16,7 +16,7 @@ class Controller(object):
 
 
     def startView(self):
-        self.view.startView(self.model.get_dataset_names())
+        self.view.startView(self.model.get_dataset_names(), self.model.get_algorithm_names())
         #set available dataset internally (KDD at the moment)
         #self.view.set_cmbbox_datasets(self.model.get_dataset_names(), 'a')
         self.view.execute()
