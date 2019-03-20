@@ -64,44 +64,6 @@ class Model(object):
             return {}
 
     
-    #def apply_current_algorithm(self):
-    #    if(self.dataset.size > 0):
-    #        self.current_algorithm.apply_alg(self.dataset, self.testing_set)
-    #    else:
-    #    #show message box error
-    #        print('no dataset loaded! Cannot perform algorithm')
-    #        return {}
-            
-
-
-    def kmean_algorithm(self):
-        alg : Algorithm
-
-        if self.current_algorithm.name != '':
-            alg = self.current_algorithm
-        else:
-            for elem in self.algorithms:
-                if elem.name == 'kmean':
-                    alg = elem
-                    self.current_algorithm = alg
-                    break
-        results = self.current_algorithm.apply_alg(self.dataset)
-        self.results.append(results)
-        return results.show_results()
-
-    def som_algorithm(self): #might move the function in the som object
-        alg : Algorithm
-        
-        if self.current_algorithm.name != '':
-            alg = self.current_algorithm
-        else:
-            for elem in self.algorithms:
-                if elem.name == 'som':
-                    alg = elem
-                    self.current_algorithm = alg
-                    break
-        
-
     def get_som_coord_clusters_normal(self):
         """return coordinates for normals and anomalies clusters created in the som
            [[normal],[anomaly]] 
@@ -134,6 +96,19 @@ class Model(object):
             print("No results stored yet, run algorithm at least once")
             return
     
+    def get_result(self, index):
+        print(self.results[index].algorithm_settings.name)#DEBUG
+        return self.results[index].show_results()
+        
+    def get_result_alg_properties(self, index):
+        return self.results[index].algorithm_settings.get_properties()
+
+    def get_results_alg_names(self):
+        names = []
+        for result in self.results:
+            names.append(result.algorithm_settings.name)
+        return names
+
     def get_current_alg_name(self):
         return self.current_algorithm.name
 
@@ -1180,7 +1155,7 @@ class Result_Som(Result_Alg):
 class Result_Kmean(Result_Alg):
     def __init__(self, alg_kmean):
         super(Result_Kmean, self).__init__()
-        self.algorith_settings = alg_kmean.copy()
+        self.algorithm_settings = alg_kmean.copy()
 
     def show_results(self):
         """returning results to be shown on view using a dictionary"""
@@ -1191,7 +1166,7 @@ class Result_Kmean(Result_Alg):
 class Result_Fixed_Width_Clustering(Result_Alg):
     def __init__(self, fixed_width_alg):
         super(Result_Fixed_Width_Clustering, self).__init__()
-        self.algorith_settings = fixed_width_alg.copy()
+        self.algorithm_settings = fixed_width_alg.copy()
 
     def show_results(self):
         results = super(Result_Fixed_Width_Clustering, self).show_results()

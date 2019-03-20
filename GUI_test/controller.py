@@ -24,11 +24,15 @@ class Controller(object):
     def run_algorithm(self):
         """run the current algorithm selected in the model"""
         results : dict = self.model.apply_current_algorithm()
-        alg_name = self.model.get_current_alg_name()
         #results = {"detection rate": 10, "secodn" : 8.2}
         if results:
-            self.view.show_algorithm_results(alg_name, results)
-            
+            self.show_result(results)
+
+    def show_result(self, results):
+        alg_name = self.model.get_current_alg_name()
+        names_results = self.model.get_results_alg_names()
+        self.view.show_algorithm_results(alg_name, results, names_results)
+
     def set_run_algorithm(self):
          """set new algorithm in the model and run it"""
          algorithm = self.view.get_algorithm_active()
@@ -141,14 +145,17 @@ class Controller(object):
         #show window with data
         
 
-    def rerun_algorithm(self):
-        pass
-        #get algorithm from view
-        #run algorithm
-
     def modify_properties_alg(self):
         properties = self.view.get_properties_modified()
         self.model.modify_properties_alg(properties)
+    
+    def set_chosen_result(self, index):
+        """showing the result chosen, will reload the whole window"""
+        print("index:" + str(index))
+        result = self.model.get_result(index)
+        properties = self.model.get_result_alg_properties(index) #not using them atm
+        if(result):
+            self.show_result(result)
 
     def script(self):
         training = self.model.read_training_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\filtered_freq_normmax_names.csv")

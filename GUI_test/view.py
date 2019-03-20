@@ -248,6 +248,11 @@ class View(object):
         if(algorithm == 'som'): #dirty
             layout_top_upper.addWidget(QPushButton('View clusters created', clicked = self.listener.view_som_map_clusters))
         
+        group_box_results = QGroupBox('Results')
+        layout_results = QVBoxLayout(objectName = 'layout_results')
+        layout_results.setAlignment(Qt.AlignTop)
+        group_box_results.setLayout(layout_results)
+        
         layout_mid = QVBoxLayout(objectName = 'layout_mid')
         m = PlotCanvas(self.second_window, width=5, height=4)
         layout_mid.addWidget(m)
@@ -256,15 +261,16 @@ class View(object):
         layout_bottom.addWidget(btn_rerun)
         layout_bottom.setAlignment(btn_rerun, Qt.AlignCenter)
         
-        main_layout.addLayout(layout_top_upper,0,0)
-        main_layout.addLayout(layout_mid, 1, 0)
-        main_layout.addLayout(layout_bottom, 2, 0)
+        main_layout.addLayout(layout_top_upper,0,0, 1, 2)
+        main_layout.addWidget(group_box_results,1,0,1,1)
+        main_layout.addLayout(layout_mid, 1, 1)
+        main_layout.addLayout(layout_bottom, 2, 1)
         self.second_window.setLayout(main_layout)
         #self.second_window.setWindowModality(Qt.ApplicationModal)
         self.second_window.show()
         
      
-    def show_algorithm_results(self, algorithm, results):
+    def show_algorithm_results(self, algorithm, results, names_results):
         self.new_window(algorithm) #work on second window
         layout_mid = self.second_window.findChild(QVBoxLayout, name = "layout_mid")
         for key, value in results.items():
@@ -272,7 +278,17 @@ class View(object):
             layout.addWidget(QLabel(str(key)))
             layout.addWidget(QLabel(str(value)))
             layout_mid.addLayout(layout)
-    
+        
+        #set the results names 
+        layout_results : QVBoxLayout = self.second_window.findChild(QVBoxLayout, name = "layout_results")
+        
+        for index in range(len(names_results)):
+            widget = QPushButton(names_results[index])
+            #widget.setProperty('index', index) not need because index is stored in the lambda
+            widget.clicked.connect(lambda a, i = index : self.listener.result_chosen(i)) #a paramether used to consume the boolean that clicked would pass to function
+            layout_results.addWidget(widget)
+            
+
     def show_new_window_scatterplot(self, labels_element, x_coords, y_coords, name = None):
         if len(x_coords) != len(y_coords):
             print("missing coordinates for categories to represent in the scatterplot")
@@ -432,3 +448,5 @@ class EventListener(object):
     def form_submitted(self):
         self.control.modify_properties_alg()
     
+    def result_chosen(self, index):
+        self.control.set_chosen_result(index)
