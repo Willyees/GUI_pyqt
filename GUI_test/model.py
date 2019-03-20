@@ -3,11 +3,13 @@ import math
 import numpy as np
 import os.path
 from sklearn.cluster import KMeans
+from sklearn.metrics.pairwise import euclidean_distances
 from sklearn import preprocessing
 import math
 from minisom import MiniSom
 from timeit import default_timer as timer
 from collections import defaultdict
+import itertools
 
 class Model(object):
     
@@ -578,6 +580,51 @@ class Model(object):
                 nominal_set[set_index].add(self.dataset.data[i1][i2]) 
         return nominal_set
 
+    def test(self):
+        f = open(r"C:\Users\User\Downloads\kddcup.data_10_percent\fixed_alg_outcome.csv", "a")
+        
+        self.read_training_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\filtered_freq_normmax_names.csv")
+        self.read_testing_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\tests\test_freq_filtered_maxnorm_names.csv")
+        #self.read_testing_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\test_test_names.csv")
+        #self.read_training_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\test_names.csv")
+        for i in [2.5]:
+            alg = Fixed_Width_Clustering(i)
+            f.write("Threshold: "+ str(i))
+            train_cluster_labels = alg.train_alg_labels(self.dataset.data, self.dataset.target)
+            test_map_label = alg.test_alg_label(self.testing_set.data, self.testing_set.target)
+            map_labels = list(zip(list(zip(*train_cluster_labels))[0],test_map_label))
+            out = []
+            for cluster in map_labels:#a giant mess, fix it using a proper structure
+                temp = [cluster[0]]
+                for index in range(len(cluster[1])):
+                    temp.append(cluster[1][index])
+                out.append(temp)
+
+            detection_rate = alg.calculate_detection_rate(out)
+            false_alarm = alg.calculate_false_alarm(out)
+            print(detection_rate)
+            print(false_alarm)
+            f.write("TRAINING")
+            for label in train_cluster_labels:
+                temp = ""
+                for elem in label:
+                    temp = temp + str(elem) + ","
+                temp += "\n"
+                f.write(temp)
+            f.write("TESTING")
+            for label in test_map_label:
+                temp = ""
+                for elem in label:
+                    temp = temp + str(elem) + ","
+                temp += "\n"
+                f.write(temp)
+            f.write("******")
+        f.close()
+        #print(labels_)
+        #print(len(alg.clusters))
+        
+            
+
 class Dataset(object):
     def __init__(self):
         self.data = [[]]
@@ -615,6 +662,8 @@ class Dataset(object):
 
     def set_attribute_names(self, attr_names):
         self.attr_names = attr_names
+
+    
 
 
 class Algorithm(object): #abstract class
@@ -930,6 +979,121 @@ class Algorithm_Kmean(Algorithm):
             total[index] = sum(count[index])
         print(total)
 
+class Fixed_Width_Clustering(Algorithm):
+    def __init__(self, width):
+        #set intial clusters set
+        self.clusters = []
+        self.fixed_width = width
+
+    def get_properties(self):
+        pass
+        #properties = {self.cluster_n_print : self.cluster_n, self.y_power_print: self.y_power}
+        #return properties
+
+    def set_properties(self, properties):
+        pass
+        #"""set properties from dictionary like structure (expecting correct type value in the dictionary"""
+        #self.cluster_n = properties[self.cluster_n_print]
+        #self.y_power = properties[self.y_power_print]
+
+    def copy(self):
+        copy_alg = Fixed_Width_Clustering(self.fixed_width)
+        return copy_alg
+
+    def add_cluster(self, centroid):
+        self.clusters.append(centroid)
+    
+    def calculate_distance_to_clusters(self, record):
+        return euclidean_distances(record, self.clusters)
+
+    def get_closest_cluster(self, record):
+        distances = self.calculate_distance_to_clusters([record])
+        return self.get_smallest_index(distances[0]) #passing only [0] because there should be only 1 element in array since it has been calculated distance between 1 record vs centroids
+
+    def get_smallest_index(self, distances):
+        min_index = 0
+        
+        for index in range(1, len(distances)):
+            if(distances[index] < distances[min_index]):
+                min_index = index
+        return min_index
+
+    def train_alg(self, training):
+        print("Running Algorithm")
+        self.add_cluster(training[len(training) -1]) #better to pick it randomly | center_id = random_state.randint(n_samples)
+        labels = [0]
+        for index in range(len(training) - 1):
+             distances = self.calculate_distance_to_clusters([training[index]])
+             min_index = self.get_smallest_index(distances[0])
+             if(distances[0][min_index] < self.fixed_width):
+                 labels.append(min_index)
+                 pass
+             else:
+                 self.add_cluster(training[index])
+                 labels.append(len(self.clusters) - 1)
+                 print("added: n.", len(self.clusters))
+        return labels
+
+    def train_alg_labels(self, training, labels):
+        clusters_labels = self.train_alg(training)
+        temp = [['',0,0] for x in range(len(self.clusters))] #['type', normal#, attack#]
+
+        for index in range(len(clusters_labels)):
+            if(labels[index] == "normal."):
+                temp[clusters_labels[index]][1] += 1
+            else:
+                temp[clusters_labels[index]][2] += 1
+
+        for elem in temp:
+            if(elem[1] > elem[2]):
+                elem[0] = 'normal.'
+            elif(elem[1] < elem[2]):
+                elem[0] = 'attack.'
+            else:
+                #print("number of attacks and normal connections are the same")
+                elem[0] = 'attack.'
+        return temp
+
+    def test_alg(self, testing):
+        clusters = []
+        for elem in testing:
+            clusters.append(self.get_closest_cluster(elem))
+        return clusters
+    
+    def test_alg_label(self, testing, labels):
+        clusters = self.test_alg(testing)
+        map_labels = [[0,0] for x in range(len(self.clusters))] #[[normals#, attacks#], [..]]
+        for index in range(len(clusters)):
+            if(labels[index] == 'normal.'):
+                map_labels[clusters[index]][0] += 1
+            else:
+                map_labels[clusters[index]][1] += 1
+        return map_labels
+
+    def calculate_detection_rate(self, map_labels):
+        """ratio of the detected attack records to the total attack records
+           map_labels: [['type', normals#, attacks#],[..]]"""
+        detected = 0
+        total = 0
+        for elem in map_labels:
+            if(elem[0] == 'attack.'):
+                detected += elem[2]
+            total += elem[2]
+        return detected / total
+        
+
+    def calculate_false_alarm(self, map_labels):
+        """the ratio of the normal records detected as the attack record, to total normal records"""
+        not_detected = 0
+        total = 0
+        for elem in map_labels:
+            if(elem[0] == 'attack.'):
+                not_detected += elem[1]
+            total += elem[1]
+        print("normal as attack: ",not_detected)
+        print("total normal: ",total)
+        return not_detected / total
+
 class Result_Alg(object):
     def __init__(self):
         self.detection_rate = -1
@@ -963,3 +1127,4 @@ class Result_Kmean(Result_Alg):
         #add other kmean results needed to be shown in view
         return results
     
+
