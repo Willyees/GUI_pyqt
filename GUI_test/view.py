@@ -252,7 +252,7 @@ class View(object):
         m = PlotCanvas(self.second_window, width=5, height=4)
         layout_mid.addWidget(m)
         layout_bottom = QVBoxLayout()
-        btn_rerun = QPushButton('RERUN', clicked = self.listener.submit_window, maximumWidth = 100)
+        btn_rerun = QPushButton('RERUN', clicked = self.listener.rerun_algorithm, maximumWidth = 100)
         layout_bottom.addWidget(btn_rerun)
         layout_bottom.setAlignment(btn_rerun, Qt.AlignCenter)
         
@@ -405,7 +405,7 @@ class EventListener(object):
         self.control.attribute_checked(state)
         
     def submit_window(self):
-        self.control.run_algorithm()
+        self.control.set_run_algorithm()
         
     def remove_selected_attr(self):
         self.control.attr_removed()
@@ -427,7 +427,7 @@ class EventListener(object):
         self.control.show_settings_algorithm()
     
     def rerun_algorithm(self):
-        self.control.rerun_algorithm()
+        self.control.run_algorithm()
 
     def form_submitted(self):
         self.control.modify_properties_alg()

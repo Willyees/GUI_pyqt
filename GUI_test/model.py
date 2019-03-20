@@ -39,23 +39,24 @@ class Model(object):
         fixed_width.set_properties_choices({fixed_width.distance_alg_print: ['euclidean', 'manhattan']})
         self.algorithms.add(fixed_width)
     
-    def apply_algorithm(self, algorithm):
+    def set_current_algorithm(self, algorithm):
+        """set the current algorithm as the one passed as argument with default settings"""
+        for elem in self.algorithms: #find the algorithm required amongst the available ones and load it
+            if elem.name == str.lower(algorithm):
+                alg = elem
+                self.current_algorithm = alg
+                break
+
+    def apply_current_algorithm(self):
         if(self.dataset.size > 0):
             if(self.dataset.attr_size != self.testing_set.attr_size):
                 print("different attributes between training and testing set")
                 return {}
-
-            alg : Algorithm
-            if self.current_algorithm.name != '':
-                alg = self.current_algorithm
-            else:
-                for elem in self.algorithms:
-                    if elem.name == str.lower(algorithm):
-                        alg = elem
-                        self.current_algorithm = alg
-                        break
-
-            return alg.apply_alg(self.dataset, self.testing_set)
+            alg = self.current_algorithm
+            results = alg.apply_alg(self.dataset, self.testing_set)
+            if(results.show_results()):
+                self.results.append(results)
+            return results.show_results()
             
         else:
             #show message box error
@@ -63,13 +64,13 @@ class Model(object):
             return {}
 
     
-    def apply_current_algorithm(self):
-        if(self.dataset.size > 0):
-            self.current_algortithm.apply_alg(self.dataset, self.testing_set)
-        else:
-        #show message box error
-            print('no dataset loaded! Cannot perform algorithm')
-            return {}
+    #def apply_current_algorithm(self):
+    #    if(self.dataset.size > 0):
+    #        self.current_algorithm.apply_alg(self.dataset, self.testing_set)
+    #    else:
+    #    #show message box error
+    #        print('no dataset loaded! Cannot perform algorithm')
+    #        return {}
             
 
 
@@ -86,7 +87,7 @@ class Model(object):
                     break
         results = self.current_algorithm.apply_alg(self.dataset)
         self.results.append(results)
-        return results
+        return results.show_results()
 
     def som_algorithm(self): #might move the function in the som object
         alg : Algorithm
@@ -132,6 +133,9 @@ class Model(object):
         else:
             print("No results stored yet, run algorithm at least once")
             return
+    
+    def get_current_alg_name(self):
+        return self.current_algorithm.name
 
     def get_current_alg_properties(self):
         current_alg = self.current_algorithm
@@ -743,12 +747,13 @@ class Algorithm_Som(Algorithm):
         return copy_alg
 
     def apply_alg(self, dataset, testing):
+        print('Running ', self.name)
         try:
             dataset.data = np.array(dataset.data, dtype = float)
             testing.data = np.array(testing.data, dtype = float)
         except ValueError:
             print('Not possible to apply SOM on categorical data, transform it')
-            return {}
+            return Result_Som(self)
 
         #som = MiniSom(6, 6, dataset.attr_size, sigma=1, learning_rate=0.5, neighborhood_function='gaussian')
         som = MiniSom(self.x, self.y, dataset.attr_size, sigma = self.sigma, learning_rate = self.learning_rate, neighborhood_function = self.neighborhood_function, random_seed = self.random_seed)
@@ -775,7 +780,7 @@ class Algorithm_Som(Algorithm):
         #results.false_alarm = self.calculate_false_alarm(map_labeled)
         print(results.detection_rate)
         print(results.false_alarm)
-        return results.show_results()
+        return results
 
     def calc_results(self, som : MiniSom, cluster_label, testing):
             attack = 0
@@ -860,11 +865,12 @@ class Algorithm_Kmean(Algorithm):
         return copy_alg
 
     def apply_alg(self, dataset, testing):
+        print('Running ', self.name)
         try:
             np.array(dataset.data[0], dtype = float)
         except ValueError:
             print("Not possible utilize categorical values in this algorithm, transform them")
-            return {}
+            return Result_Kmean(self)
 
         y = KMeans(n_clusters = self.cluster_n).fit(dataset.data)
         
@@ -893,7 +899,7 @@ class Algorithm_Kmean(Algorithm):
         results = Result_Kmean(self)
         results.detection_rate = detection_rate
         results.false_alarm = false_alarm
-        return results.show_results()
+        return results
 
     def of_label_clusters(self, clusters_pop, of, normal_instances):
         """gives labels to clusters based on the of calculated. clusters_pop = population of each cluster, normal_instances = number of normal instances in the dataset"""
@@ -1017,6 +1023,7 @@ class Fixed_Width_Clustering(Algorithm):
         return copy_alg
     
     def apply_alg(self, training, testing):
+        print('Running ', self.name)
         train_cluster_labels = self.train_alg_labels(training.data, training.target)
         test_map_label = self.test_alg_label(testing.data, testing.target)
         map_labels = list(zip(list(zip(*train_cluster_labels))[0],test_map_label))
@@ -1034,7 +1041,7 @@ class Fixed_Width_Clustering(Algorithm):
         results.false_alarm = false_alarm
         print(detection_rate)
         print(false_alarm)
-        return results.show_results()
+        return results
 
     def add_cluster(self, centroid):
         self._clusters.append(centroid)
@@ -1148,10 +1155,14 @@ class Result_Alg(object):
     def __init__(self):
         self.detection_rate = -1
         self.false_alarm = -1
+        #might add time taken to run alg
 
     def show_results(self):
-        common_results = {'detection rate' : self.detection_rate, 'false alarm' : self.false_alarm}
-        return common_results
+        if(self.detection_rate != -1 and self.false_alarm != -1):
+            common_results = {'detection rate' : self.detection_rate, 'false alarm' : self.false_alarm}
+            return common_results
+        else:
+            return {}
 
 class Result_Som(Result_Alg):
     def __init__(self, alg_som):

@@ -22,13 +22,18 @@ class Controller(object):
         self.view.execute()
 
     def run_algorithm(self):
-        algorithm = self.view.get_algorithm_active()
-        results : dict = self.model.apply_algorithm(algorithm)
+        """run the current algorithm selected in the model"""
+        results : dict = self.model.apply_current_algorithm()
+        alg_name = self.model.get_current_alg_name()
         #results = {"detection rate": 10, "secodn" : 8.2}
         if results:
-            self.view.show_algorithm_results(algorithm, results)
+            self.view.show_algorithm_results(alg_name, results)
             
-        
+    def set_run_algorithm(self):
+         """set new algorithm in the model and run it"""
+         algorithm = self.view.get_algorithm_active()
+         self.model.set_current_algorithm(algorithm)
+         self.run_algorithm()
 
     def print(self):
         print("SUP?")
@@ -136,7 +141,7 @@ class Controller(object):
         #show window with data
         
 
-    def rerun_algorithm(self):\
+    def rerun_algorithm(self):
         pass
         #get algorithm from view
         #run algorithm
