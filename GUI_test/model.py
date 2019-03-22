@@ -82,7 +82,12 @@ class Model(object):
                 outlier[0].append(key[0])
                 outlier[1].append(key[1])
         return [inlier, outlier]
-        
+    
+    def clear_storage_new_load(self):
+        """clear results and current algorithm"""
+        self.results.clear()
+        self.current_algorithm = Algorithm()
+
     def get_som_map_label(self):
         """get last som map label calculated"""
         if(self.results):
@@ -99,6 +104,13 @@ class Model(object):
     def get_result(self, index):
         print(self.results[index].algorithm_settings.name)#DEBUG
         return self.results[index].show_results()
+
+    def get_results(self, indexes):
+        results = []
+        for index in indexes:
+            results.append(self.results[index].show_results())
+        print(results)
+        return results
         
     def get_result_alg_properties(self, index):
         return self.results[index].algorithm_settings.get_properties()
@@ -108,6 +120,15 @@ class Model(object):
         for result in self.results:
             names.append(result.algorithm_settings.name)
         return names
+    
+    def get_results_alg_names_chosen(self, indexes):
+        names = []
+        for index in indexes:
+            names.append(self.results[index].algorithm_settings.name)
+        return names
+
+    def get_last_result(self):
+        return self.results[len(self.results) - 1].show_results()
 
     def get_current_alg_name(self):
         return self.current_algorithm.name
@@ -205,6 +226,8 @@ class Model(object):
         except IOError:
             print("No file present!")
             return Dataset() #return empty dataset
+        #clear results and current algorithm when loading a new dataset
+        self.clear_storage_new_load()
         dataset = []
         target = []
         attr_names = [] #could use a set
@@ -318,28 +341,33 @@ class Model(object):
         #find dataset directory in map
         #DEBUG
         if(dataset_name.upper() == "TEST"):
-            print('Reading dataset')
+            self.clear_storage_new_load()
+            print('Reading dataset') #trainign and testing are the same
             self.dataset.data = np.asarray([[1,1.5],[2,2.5],[10,3.5],[25,9.5]])
             self.dataset.target = np.asarray(['normal.', 'normal.', 'attack.', 'attack.'])
             self.dataset.set_attribute_names(np.asarray(['a','b']))
             self.dataset.set_properties()
             self.dataset.set_name_path('TEST', 'inner')
             self.datasets_location['TEST'] = 'inner'
-
+            self.testing_set.data = np.asarray([[1,1.5],[2,2.5],[10,3.5],[25,9.5]])
+            self.testing_set.target = np.asarray(['normal.', 'normal.', 'attack.', 'attack.'])
+            self.testing_set.set_attribute_names(np.asarray(['a','b']))
+            self.testing_set.set_properties()
 
         elif(dataset_name.upper() == "KDD99"): #special case. Using sklearn lib to load it
-            print('Reading dataset')
+            self.clear_storage_new_load()
+            print('Reading dataset') #not loading testing, have to use import button
             kdd = datasets.fetch_kddcup99()
-            self.dataset.set_attribute_names = np.asarray(['duration','src_bytes','dst_bytes','land,wrong_fragment','urgent','hot','num_failed_logins','logged_in','num_compromised','root_shell','su_attempted','num_root','num_file_creations','num_shells','num_access_files','num_outbound_cmds','is_host_login','is_guest_login','count','srv_count','serror_rate','srv_serror_rate','rerror_rate','srv_rerror_rate','same_srv_rate','diff_srv_rate','srv_diff_host_rate','dst_host_count','dst_host_srv_count','dst_host_same_srv_rate','dst_host_diff_srv_rate','dst_host_same_src_port_rate','dst_host_srv_diff_host_rate','dst_host_serror_rate','dst_host_srv_serror_rate','dst_host_rerror_rate','dst_host_srv_rerror_rate']) # no class attribute name
+            self.dataset.data = kdd.data
+            self.dataset.target = np.array([str(x, 'utf') for x in kdd.target])
+            self.dataset.set_attribute_names(np.array(['duration','protocol_type','service','flag','src_bytes','dst_bytes','land','wrong_fragment','urgent','hot','num_failed_logins','logged_in','num_compromised','root_shell','su_attempted','num_root','num_file_creations','num_shells','num_access_files','num_outbound_cmds','is_host_login','is_guest_login','count','srv_count','serror_rate','srv_serror_rate','rerror_rate','srv_rerror_rate','same_srv_rate','diff_srv_rate','srv_diff_host_rate','dst_host_count','dst_host_srv_count','dst_host_same_srv_rate','dst_host_diff_srv_rate','dst_host_same_src_port_rate','dst_host_srv_diff_host_rate','dst_host_serror_rate','dst_host_srv_serror_rate','dst_host_rerror_rate','dst_host_srv_rerror_rate'])) # no class attribute name
             self.dataset.set_properties()
             self.dataset.set_name_path('KDD99', 'inner')
-
             self.datasets_location['KDD99'] = 'inner'
             
         else:
             if(dataset_name in self.datasets_location): #only execute if the dataset name is present in the map
                 return self.read_training_set(self.datasets_location[dataset_name])
-                
                 
         return True
 
@@ -635,6 +663,7 @@ class Dataset(object):
 
     def _set_normal_attack_n(self, normal_label = 'normal.'):
         """setting the number of normal and attack total connections in the dataset, it can use different index and normal label"""
+        #not reliable on inner KDD
         c_normal = 0
         c_attack = 0
         for label in self.target:

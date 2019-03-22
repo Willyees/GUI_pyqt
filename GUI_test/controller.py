@@ -81,7 +81,7 @@ class Controller(object):
         pass
 
     def attr_removed(self):
-        attrs_selected = self.view.get_attribute_selected()
+        attrs_selected = self.view.get_checkbox_selected()
         self.model.remove_attributes_dataset(attrs_selected)
         self.show_dataset_attributes()
 
@@ -99,7 +99,7 @@ class Controller(object):
 
 
     def nominal_to_binary(self):
-        attr_checked = self.view.get_attribute_selected()
+        attr_checked = self.view.get_checkbox_selected()
         if(self.model.attr_nominal_to_binary(attr_checked)): #also removing attribute interally (in model) if it is a category attribute
             self.show_dataset_attributes()
 
@@ -156,6 +156,16 @@ class Controller(object):
         properties = self.model.get_result_alg_properties(index) #not using them atm
         if(result):
             self.show_result(result)
+    
+    def compare_results(self):
+        result_indexes = self.view.get_checkbox_selected()
+        results = self.model.get_results(result_indexes)
+        results_names_chosen = self.model.get_results_alg_names_chosen(result_indexes)
+        last_result = self.model.get_last_result()
+        if(results):
+            alg_name = self.model.get_current_alg_name()
+            names_results = self.model.get_results_alg_names()
+            self.view.show_algorithm_results(alg_name, last_result, names_results, results, results_names_chosen)
 
     def script(self):
         training = self.model.read_training_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\filtered_freq_normmax_names.csv")

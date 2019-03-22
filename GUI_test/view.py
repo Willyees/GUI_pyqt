@@ -5,6 +5,9 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import random
+import numpy as np
+from collections import deque
+
 class View(object):
     def __init__(self):
         print("init")
@@ -12,9 +15,11 @@ class View(object):
         self.app = QApplication([])
         self.window = QWidget()
         self.window.setMinimumSize(400,400)
-        self.second_window : QWidget()
+        self.second_window = QWidget()
+        self.second_window.setAttribute(Qt.WA_DeleteOnClose)
         self.additional_windows = []
         self.attribute_checked = 0
+        self.active_window = QWidget()
       
     def startView(self, dataset_names, algorithm_names):
         main_layout = QGridLayout()
@@ -110,6 +115,7 @@ class View(object):
         main_layout.addLayout(layout_button, 2, 1, Qt.AlignBottom)
         main_layout.addLayout(layout_testing, 3, 0, 1, 1)
         self.window.setLayout(main_layout)
+        self.active_window = self.window #setting the active window so it is possible to retreive information about the actual showing window
         
     
     def execute(self):
@@ -197,10 +203,10 @@ class View(object):
     def get_unselected_attributes(self):
         pass
 
-    def get_attribute_selected(self):
+    def get_checkbox_selected(self):
         indexes = []
-        layout = self.window.findChild(QGroupBox, name = 'top_left_group')
-        check_boxs = layout.findChildren(QCheckBox)
+        #layout = self.actual_window.findChild(QGroupBox, name = 'top_left_group') using the window as parent
+        check_boxs = self.active_window.findChildren(QCheckBox)
         for item in check_boxs:
             if(item.isChecked()):
                 indexes.append(item.property('index'))
@@ -240,7 +246,8 @@ class View(object):
         return algorithm.currentText()
 
     def new_window(self, algorithm):
-        self.second_window = QWidget()
+        window = QWidget(destroyed = self.closed_second_window)
+        window.setAttribute(Qt.WA_DeleteOnClose)
         main_layout = QGridLayout()
         layout_top_upper = QHBoxLayout()
         layout_top_upper.addWidget(QLabel(str.upper(algorithm)))
@@ -249,13 +256,25 @@ class View(object):
             layout_top_upper.addWidget(QPushButton('View clusters created', clicked = self.listener.view_som_map_clusters))
         
         group_box_results = QGroupBox('Results')
+        
+        layout_results_wrapper = QVBoxLayout()
         layout_results = QVBoxLayout(objectName = 'layout_results')
         layout_results.setAlignment(Qt.AlignTop)
-        group_box_results.setLayout(layout_results)
+        btn_compare = QPushButton('COMPARE', clicked = self.listener.compare_results)
+        
+        layout_results_wrapper.addLayout(layout_results)
+        layout_results_wrapper.addWidget(btn_compare)
+        layout_results_wrapper.setAlignment(btn_compare, Qt.AlignBottom)
+        
+        group_box_results.setLayout(layout_results_wrapper)
         
         layout_mid = QVBoxLayout(objectName = 'layout_mid')
-        m = PlotCanvas(self.second_window, width=5, height=4)
-        layout_mid.addWidget(m)
+        layout_charts = QHBoxLayout()
+        m = PlotCanvas(window) #width , height changes the size of the plot 
+        m1 = PlotCanvas(window)
+        layout_charts.addWidget(m)
+        layout_charts.addWidget(m1)
+        layout_mid.addLayout(layout_charts)
         layout_bottom = QVBoxLayout()
         btn_rerun = QPushButton('RERUN', clicked = self.listener.rerun_algorithm, maximumWidth = 100)
         layout_bottom.addWidget(btn_rerun)
@@ -265,12 +284,18 @@ class View(object):
         main_layout.addWidget(group_box_results,1,0,1,1)
         main_layout.addLayout(layout_mid, 1, 1)
         main_layout.addLayout(layout_bottom, 2, 1)
-        self.second_window.setLayout(main_layout)
+        window.setLayout(main_layout)
+        
         #self.second_window.setWindowModality(Qt.ApplicationModal)
-        self.second_window.show()
+        del self.active_window
+        
+        self.second_window = window
+        self.active_window = window
+        print("active_window = second")
+        self.active_window.show()
         
      
-    def show_algorithm_results(self, algorithm, results, names_results):
+    def show_algorithm_results(self, algorithm, results, names_results, compare_results = [], compare_names = []):
         self.new_window(algorithm) #work on second window
         layout_mid = self.second_window.findChild(QVBoxLayout, name = "layout_mid")
         for key, value in results.items():
@@ -281,12 +306,36 @@ class View(object):
         
         #set the results names 
         layout_results : QVBoxLayout = self.second_window.findChild(QVBoxLayout, name = "layout_results")
-        
         for index in range(len(names_results)):
-            widget = QPushButton(names_results[index])
+            layout_inner = QHBoxLayout()
+            check = QCheckBox(checked = False, stateChanged = self.listener.attribute_checked)
+            check.setProperty('index', index)
+            btn = QPushButton(names_results[index])
             #widget.setProperty('index', index) not need because index is stored in the lambda
-            widget.clicked.connect(lambda a, i = index : self.listener.result_chosen(i)) #a paramether used to consume the boolean that clicked would pass to function
-            layout_results.addWidget(widget)
+            btn.clicked.connect(lambda a, i = index : self.listener.result_chosen(i)) #a paramether used to consume the boolean that clicked would pass to function
+            layout_inner.addWidget(check)
+            layout_inner.addWidget(btn)
+            layout_results.addLayout(layout_inner)
+            layout_results.setAlignment(layout_inner,Qt.AlignTop)
+        plots = self.second_window.findChildren(PlotCanvas)   
+        #plot.plot_bar([detection_rate],[name])
+        results_list = []
+        results_titles = []
+        results_names = []
+        if(compare_results):
+            results_list = [[] for x in range(len(compare_results[0]))]
+            for index in range(len(compare_results)):
+                for inn, (key, val) in enumerate(compare_results[index].items()):
+                    results_list[inn].append(val * 100) 
+                    results_titles.append(key)
+            results_titles = results_titles[0:len(compare_results[0])] #all the keys were added. Only keep the unique ones
+            results_names = compare_names
+        else:
+            results_list = [[val * 100] for val in results.values()] #multiply by 100 to get the percentage
+            results_titles = [key for key in results.keys()]
+            results_names = [algorithm]
+        for index in range(len(results_list)):
+            plots[index].plot_bar(results_list[index], results_names, results_titles[index])
             
 
     def show_new_window_scatterplot(self, labels_element, x_coords, y_coords, name = None):
@@ -296,12 +345,10 @@ class View(object):
         if len(x_coords) != len(labels_element):
             print("mismatching number of labels and categories coordinates")
             return
-
         plt.figure(num = name)
         for index in range(len(x_coords)):
             plt.scatter(x_coords[index], y_coords[index],
                 label=labels_element[index])
-        
         plt.legend()
         plt.show()
         
@@ -354,6 +401,10 @@ class View(object):
         #remove window from list
         print("removed window")
         self.additional_windows.pop()
+    
+    def closed_second_window(self):
+        print("closed second window")
+        self.active_window = self.window
 
     def get_properties_modified(self):
         window = self.additional_windows[len(self.additional_windows) - 1] #get last additional window
@@ -381,27 +432,32 @@ class View(object):
 
 class PlotCanvas(FigureCanvas):
  
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
+    def __init__(self, parent=None, width=2, height=4, dpi=100):
         fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = fig.add_subplot(111)
+        #self.axes = fig.add_subplot(111)
  
         FigureCanvas.__init__(self, fig)
         self.setParent(parent)
- 
+        
         FigureCanvas.setSizePolicy(self,
                 QSizePolicy.Expanding,
                 QSizePolicy.Expanding)
         FigureCanvas.updateGeometry(self)
-        self.plot()
         
- 
-    def plot(self):
-        data = [random.random() for i in range(25)]
-        ax = self.figure.add_subplot(111)
-        ax.plot(data, 'r-')
-        ax.set_title('PyQt Matplotlib Example')
+    def plot_bar(self, heights, labels, title):
+        #pm, pc, pn = plt.bar(ind, get_stats(0))
+        #pm.set_facecolor('r') #can change color in this way
+        chart = self.figure.subplots()
+        chart.bar(np.arange(len(heights)), heights, width = 0.35)
+        chart.set_ylim([0,100])
+        chart.set_xticks(np.arange(len(heights) + 1))#adding extra tick because in case there is only 1, the bar will occupy the whole chart resulting in a big fat bar
+        chart.set_xticklabels(labels)
+        chart.set_ylabel('%')
+        chart.set_title(title)
         self.draw()
-    
+        #matplotlib.pyplot.bar(x, height, width=0.8, bottom=None, *, align='center', data=None, **kwargs)[source]
+        #https://matplotlib.org/api/_as_gen/matplotlib.pyplot.bar.html
+
 from controller import *
 
 class EventListener(object):
@@ -450,3 +506,7 @@ class EventListener(object):
     
     def result_chosen(self, index):
         self.control.set_chosen_result(index)
+
+    def compare_results(self):
+        self.control.compare_results()
+        
