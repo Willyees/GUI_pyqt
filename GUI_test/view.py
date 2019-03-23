@@ -275,8 +275,7 @@ class View(object):
         layout_mid = QVBoxLayout(objectName = 'layout_mid')
         layout_datasets_info = QVBoxLayout(objectName = 'layout_datasets_info')
         layout_result_table = QVBoxLayout(objectName = 'layout_result_table')
-        table_result_alg_prop = QTableWidget(0,0,objectName = 'table_result_alg_prop')
-        table_result_alg_prop.hide()
+        layout_result_alg_prop = QVBoxLayout(objectName = 'layout_result_alg_prop')
         layout_charts = QHBoxLayout()
         m = PlotCanvas(window) #width , height changes the size of the plot 
         m1 = PlotCanvas(window)
@@ -285,7 +284,7 @@ class View(object):
         layout_mid.addLayout(layout_datasets_info)
         layout_mid.addLayout(layout_charts)
         layout_mid.addLayout(layout_result_table)
-        layout_mid.addWidget(table_result_alg_prop)
+        layout_mid.addLayout(layout_result_alg_prop)
         layout_bottom = QVBoxLayout()
         btn_rerun = QPushButton('RERUN', clicked = self.listener.rerun_algorithm, maximumWidth = 100)
         layout_bottom.addWidget(btn_rerun)
@@ -430,9 +429,10 @@ class View(object):
     def show_alg_properties_chosen(self, name_alg, properties):
         #clear layout
         
-        table : QTableWidget = self.active_window.findChild(QTableWidget, name = "table_result_alg_prop")
+        layout = self.active_window.findChild(QVBoxLayout, name = "layout_result_alg_prop")
         #if(layout == None):
         #    return
+        table = QTableWidget()
         table.setRowCount(1)
         table.setColumnCount(len(properties))
         #self.clean_layout(layout)
@@ -441,12 +441,14 @@ class View(object):
         table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         table.setHorizontalHeaderLabels(list(properties.keys()))
+        table.resizeColumnsToContents()
+        table.resizeRowsToContents()
         table.setVerticalHeaderLabels([name_alg])
         for index, val in enumerate(properties.values()):
             table.setItem(0, index, QTableWidgetItem(str(val)))
 
 
-        table.resizeColumnsToContents()
+        
         #width = 0.0
         #for i in range(table.columnCount()):
         #    width += table.columnWidth(i)
@@ -472,7 +474,7 @@ class View(object):
         
         table.setMaximumSize(table.horizontalHeader().length()+table.verticalHeader().width(), table.verticalHeader().length()+table.horizontalHeader().height())
         
-        table.show()
+        layout.addWidget(table)
         
 
     def show_new_window_scatterplot(self, labels_element, x_coords, y_coords, name = None):
