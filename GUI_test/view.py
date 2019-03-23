@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QLabel, QComboBox, QHBoxLayout, QWidget, QVBoxLayout, QGroupBox, QGridLayout, QPushButton, QSlider, QScrollBar, QLayout, QLayoutItem, QCheckBox, QScrollArea, QSizePolicy, QFileDialog, QInputDialog, QTableWidget, QTableWidgetItem, QAbstractItemView
+from PyQt5.QtWidgets import QApplication, QLabel, QComboBox, QHBoxLayout, QWidget, QBoxLayout, QVBoxLayout, QGroupBox, QGridLayout, QPushButton, QSlider, QScrollBar, QLayout, QLayoutItem, QCheckBox, QScrollArea, QSizePolicy, QFileDialog, QInputDialog, QTableWidget, QTableWidgetItem, QAbstractItemView
 from PyQt5.QtCore import Qt, QObject, pyqtSlot, QSignalMapper, QStringListModel, QModelIndex, QRect
 from PyQt5.QtGui import QPalette, QColor, QStandardItemModel
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -260,7 +260,6 @@ class View(object):
             layout_top_upper.addWidget(btn_som)
         
         group_box_results = QGroupBox('Results')
-        
         layout_results_wrapper = QVBoxLayout()
         layout_results = QVBoxLayout(objectName = 'layout_results')
         layout_results.setAlignment(Qt.AlignTop)
@@ -273,27 +272,43 @@ class View(object):
         group_box_results.setLayout(layout_results_wrapper)
         
         layout_mid = QVBoxLayout(objectName = 'layout_mid')
+        layout_dataset_info_group = QGroupBox('Dataset Info')
         layout_datasets_info = QVBoxLayout(objectName = 'layout_datasets_info')
-        layout_result_table = QVBoxLayout(objectName = 'layout_result_table')
-        layout_result_alg_prop = QVBoxLayout(objectName = 'layout_result_alg_prop')
+        layout_result_group = QGroupBox('Algorithm result')
+        layout_result_wrapper = QVBoxLayout()
         layout_charts = QHBoxLayout()
+        layout_result_table = QVBoxLayout(objectName = 'layout_result_table')
+        layout_result_alg_prop_group = QGroupBox('Alg properties')
+        layout_result_alg_prop = QVBoxLayout(objectName = 'layout_result_alg_prop')
+        layout_bottom = QVBoxLayout()
+        
         m = PlotCanvas(window) #width , height changes the size of the plot 
         m1 = PlotCanvas(window)
         layout_charts.addWidget(m)
         layout_charts.addWidget(m1)
-        layout_mid.addLayout(layout_datasets_info)
-        layout_mid.addLayout(layout_charts)
-        layout_mid.addLayout(layout_result_table)
-        layout_mid.addLayout(layout_result_alg_prop)
-        layout_bottom = QVBoxLayout()
+
         btn_rerun = QPushButton('RERUN', clicked = self.listener.rerun_algorithm, maximumWidth = 100)
         layout_bottom.addWidget(btn_rerun)
         layout_bottom.setAlignment(btn_rerun, Qt.AlignCenter)
+
+        layout_dataset_info_group.setLayout(layout_datasets_info)
+        layout_result_wrapper.addLayout(layout_charts)
+        layout_result_wrapper.addLayout(layout_result_table)
+        layout_result_group.setLayout(layout_result_wrapper)
+        layout_result_alg_prop_group.setLayout(layout_result_alg_prop)
+
+        #layout_mid.addLayout(layout_dataset_info_group)
+        #layout_mid.addLayout(layout_result_group)
+        ##layout_mid.addLayout(layout_result_table)
+        #layout_mid.addLayout(layout_result_alg_prop_group)
+        
         
         main_layout.addLayout(layout_top_upper,0,0, 1, 2)
-        main_layout.addWidget(group_box_results,1,0,1,1)
-        main_layout.addLayout(layout_mid, 1, 1)
-        main_layout.addLayout(layout_bottom, 2, 1)
+        main_layout.addWidget(group_box_results,1,0,3,1)
+        main_layout.addWidget(layout_dataset_info_group, 1, 1, 1, 1)
+        main_layout.addWidget(layout_result_group, 2, 1, 1, 1)
+        main_layout.addWidget(layout_result_alg_prop_group, 3, 1, 1, 1)
+        main_layout.addLayout(layout_bottom, 4, 1)
         main_layout.setSizeConstraint(QLayout.SetMinAndMaxSize)
         window.setLayout(main_layout)
         
@@ -399,7 +414,7 @@ class View(object):
                 table_results.setItem(0,index, QTableWidgetItem(str(val)))
         else:
             
-            table_results = QTableWidget(len(compare_names), len(compare_results), objectName = 'table_results') #rows, columns
+            table_results = QTableWidget(len(compare_names), len(compare_results[0]), objectName = 'table_results') #rows, columns
             table_results.setHorizontalHeaderLabels(list(compare_results[0].keys()))
             compare_names = [compare_names[index] + str(index + 1) for index in range(len(compare_names))] #add index after the name
             table_results.setVerticalHeaderLabels(compare_names)

@@ -160,15 +160,22 @@ class Controller(object):
         """showing the result chosen, will reload the whole window"""
         print("index:" + str(index))
         result = self.model.get_result(index)
-        properties = self.model.get_result_alg_properties(index) #not using them atm
+        #properties = self.model.get_result_alg_properties(index)
+        result_name = self.model.get_results_alg_names_chosen([index])
+        last_result = self.model.get_last_result()
+        train_set_prop = self.model.show_train_set_properties()
+        test_set_prop = self.model.show_test_set_properties()
         if(result):
-            self.show_result(result)
+            alg_name = self.model.get_current_alg_name()
+            names_results = self.model.get_results_alg_names()
+            self.view.show_algorithm_results(train_set_prop, test_set_prop, alg_name, last_result, names_results, [result], result_name, [index])
+
     
     def compare_results(self):
         result_indexes = self.view.get_checkbox_selected()
         results = self.model.get_results(result_indexes)
         results_names_chosen = self.model.get_results_alg_names_chosen(result_indexes)
-        last_result, last_result_index = self.model.get_last_result()
+        last_result = self.model.get_last_result()
         train_set_prop = self.model.show_train_set_properties()
         test_set_prop = self.model.show_test_set_properties()
         if(results):
