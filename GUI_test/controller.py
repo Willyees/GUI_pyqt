@@ -168,14 +168,28 @@ class Controller(object):
         result_indexes = self.view.get_checkbox_selected()
         results = self.model.get_results(result_indexes)
         results_names_chosen = self.model.get_results_alg_names_chosen(result_indexes)
-        last_result = self.model.get_last_result()
+        last_result, last_result_index = self.model.get_last_result()
         train_set_prop = self.model.show_train_set_properties()
         test_set_prop = self.model.show_test_set_properties()
         if(results):
             alg_name = self.model.get_current_alg_name()
             names_results = self.model.get_results_alg_names()
-            self.view.show_algorithm_results(train_set_prop, test_set_prop, alg_name, last_result, names_results, results, results_names_chosen)
+            self.view.show_algorithm_results(train_set_prop, test_set_prop, alg_name, last_result, names_results, results, results_names_chosen, result_indexes)
+    
+    def show_alg_properties(self, table_index, indexes_model):
+        properties = {}
+        name = ''
+        if not(indexes_model):
+            properties = self.model.get_current_alg_properties()
+            name = self.model.get_current_alg_name()
+        else:
+            properties = self.model.get_result_alg_properties(indexes_model[table_index])
+            name = self.model.get_results_alg_names_chosen([indexes_model[table_index]])
+            name = name[0]#since it is  only 1 element, pass the element without the list
+            
 
+        self.view.show_alg_properties_chosen(name, properties)
+    
     def script(self):
         self.model.load_dataset('test')
         #training = self.model.read_training_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\filtered_freq_normmax_names.csv")

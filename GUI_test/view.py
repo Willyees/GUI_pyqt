@@ -274,6 +274,9 @@ class View(object):
         
         layout_mid = QVBoxLayout(objectName = 'layout_mid')
         layout_datasets_info = QVBoxLayout(objectName = 'layout_datasets_info')
+        layout_result_table = QVBoxLayout(objectName = 'layout_result_table')
+        table_result_alg_prop = QTableWidget(0,0,objectName = 'table_result_alg_prop')
+        table_result_alg_prop.hide()
         layout_charts = QHBoxLayout()
         m = PlotCanvas(window) #width , height changes the size of the plot 
         m1 = PlotCanvas(window)
@@ -281,6 +284,8 @@ class View(object):
         layout_charts.addWidget(m1)
         layout_mid.addLayout(layout_datasets_info)
         layout_mid.addLayout(layout_charts)
+        layout_mid.addLayout(layout_result_table)
+        layout_mid.addWidget(table_result_alg_prop)
         layout_bottom = QVBoxLayout()
         btn_rerun = QPushButton('RERUN', clicked = self.listener.rerun_algorithm, maximumWidth = 100)
         layout_bottom.addWidget(btn_rerun)
@@ -302,15 +307,10 @@ class View(object):
         self.active_window.show()
         
      
-    def show_algorithm_results(self, train_set_properties, test_set_properties, algorithm, results, names_results, compare_results = [], compare_names = []):
+    def show_algorithm_results(self, train_set_properties, test_set_properties, algorithm, results, names_results, compare_results = [], compare_names = [], indexes = []):
+        """indexes: index of the chosen results to compare [array] it can be empty"""
         self.new_window(algorithm) #work on second window
-        layout_mid :QVBoxLayout = self.second_window.findChild(QVBoxLayout, name = "layout_mid")
-        for key, value in results.items():
-            layout = QHBoxLayout()
-            layout.addWidget(QLabel(str(key)))
-            layout.addWidget(QLabel(str(value)))
-            layout_mid.addLayout(layout)
-        
+              
         #set the results names 
         layout_results : QVBoxLayout = self.second_window.findChild(QVBoxLayout, name = "layout_results")
         for index in range(len(names_results)):
@@ -330,7 +330,6 @@ class View(object):
         table_datasets = QTableWidget(2, len(train_set_properties)) #rows, columns
         table_datasets.setHorizontalHeaderLabels(list(train_set_properties.keys()))
         table_datasets.setVerticalHeaderLabels(['Trainset', 'Testset'])
-        table_datasets.setStyleSheet("QTableView {selection-background-color: blue;}");
         table_datasets.setEditTriggers(QAbstractItemView.NoEditTriggers);
         table_datasets.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         table_datasets.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -342,7 +341,6 @@ class View(object):
         for index, val in enumerate(train_set_properties.values()):
              table_datasets.setItem(0, index, QTableWidgetItem(str(val)))
         #set the test set info
-        layout_datasets_info.addWidget(QLabel("Testing set:"))
         for index, val in enumerate(test_set_properties.values()):
              table_datasets.setItem(1, index, QTableWidgetItem(str(val)))
         table_datasets.resizeColumnsToContents()
@@ -380,16 +378,34 @@ class View(object):
             results_names = [algorithm]
         for index in range(len(results_list)):
             plots[index].plot_bar(results_list[index], results_names, results_titles[index])
+
        
-        
+        layout_result_table = self.active_window.findChild(QVBoxLayout, name = 'layout_result_table')
         #table results
-        if(compare_results):
-            layout_mid = self.active_window.findChild(QVBoxLayout)
-            table_results = QTableWidget(len(compare_names), len(compare_results)) #rows, columns
+        if not(compare_results):
+            table_results = QTableWidget(1, len(results), objectName = 'table_results')
+            table_results.setHorizontalHeaderLabels(list(results.keys()))
+            table_results.setVerticalHeaderLabels([algorithm])
+            vheader = table_results.verticalHeader()
+            vheader.sectionPressed.connect(lambda table_index, i = indexes : self.listener.table_alg_chosen(table_index, i))
+            
+            
+            table_results.setEditTriggers(QAbstractItemView.NoEditTriggers);
+            table_results.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            table_results.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            
+
+            for index, val in enumerate(results.values()):
+                table_results.setItem(0,index, QTableWidgetItem(str(val)))
+        else:
+            
+            table_results = QTableWidget(len(compare_names), len(compare_results), objectName = 'table_results') #rows, columns
             table_results.setHorizontalHeaderLabels(list(compare_results[0].keys()))
             compare_names = [compare_names[index] + str(index + 1) for index in range(len(compare_names))] #add index after the name
             table_results.setVerticalHeaderLabels(compare_names)
-            table_results.setStyleSheet("QTableView {selection-background-color: blue;}");
+            vheader = table_results.verticalHeader()
+            vheader.sectionPressed.connect(lambda table_index, i = indexes : self.listener.table_alg_chosen(table_index, i))
+            
             table_results.setEditTriggers(QAbstractItemView.NoEditTriggers);
             table_results.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             table_results.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -398,17 +414,67 @@ class View(object):
                     for inn, val in enumerate(compare_results[index].values()):
                         table_results.setItem(index, inn, QTableWidgetItem(str(val)))
             table_results.resizeColumnsToContents()
-            table_results.setFixedSize(table_results.horizontalHeader().length()+table_results.verticalHeader().width(), table_results.verticalHeader().length()+table_results.horizontalHeader().height())
+        table_results.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        table_results.setFixedSize(table_results.horizontalHeader().length()+table_results.verticalHeader().width(), table_results.verticalHeader().length()+table_results.horizontalHeader().height())
             
-            table_results.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
-            #table_results.setMaximumSize()
-            layout_mid.addWidget(table_results)
+        
+        layout_result_table.addWidget(table_results)
+        layout_result_table.update()
+        #show properties algorithms 
+
         #set the window size bigger
         geom = self.second_window.geometry()
         geom.setWidth(1000)
-        geom.setHeight(800)
         self.second_window.setGeometry(geom)
         
+    def show_alg_properties_chosen(self, name_alg, properties):
+        #clear layout
+        
+        table : QTableWidget = self.active_window.findChild(QTableWidget, name = "table_result_alg_prop")
+        #if(layout == None):
+        #    return
+        table.setRowCount(1)
+        table.setColumnCount(len(properties))
+        #self.clean_layout(layout)
+        #table = QTableWidget(1, len(properties))
+        table.setEditTriggers(QAbstractItemView.NoEditTriggers);
+        table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        table.setHorizontalHeaderLabels(list(properties.keys()))
+        table.setVerticalHeaderLabels([name_alg])
+        for index, val in enumerate(properties.values()):
+            table.setItem(0, index, QTableWidgetItem(str(val)))
+
+
+        table.resizeColumnsToContents()
+        #width = 0.0
+        #for i in range(table.columnCount()):
+        #    width += table.columnWidth(i)
+        #width += table.verticalHeader().width()  
+        #height = 0.0
+        #for i in range(table.rowCount()):
+        #    height += table.rowHeight(i)
+        #height += table.horizontalHeader().height()
+        
+        #layout.addWidget(table)
+        table.setSizePolicy(QSizePolicy.Preferred,QSizePolicy.Fixed);
+        #table.setMaximumSize(width, height)
+
+
+        #table.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred)
+        
+        
+        #table.resizeRowsToContents()
+        #print(width)
+        #print(height)
+        #print(table.horizontalHeader().length()+table.verticalHeader().width())
+        #print(table.verticalHeader().length()+table.horizontalHeader().height())
+        
+        table.setMaximumSize(table.horizontalHeader().length()+table.verticalHeader().width(), table.verticalHeader().length()+table.horizontalHeader().height())
+        
+        table.show()
+        
+
     def show_new_window_scatterplot(self, labels_element, x_coords, y_coords, name = None):
         if len(x_coords) != len(y_coords):
             print("missing coordinates for categories to represent in the scatterplot")
@@ -500,7 +566,9 @@ class View(object):
 
     def test(self):
         pass
-
+    def itemClicked(self, i):
+        table = self.active_window.findChild(QTableWidget, name = 'table_results')
+        print(table.verticalHeaderItem(i).text())
 class PlotCanvas(FigureCanvas):
  
     def __init__(self, parent=None, width=2, height=4, dpi=100):
@@ -583,4 +651,8 @@ class EventListener(object):
 
     def compare_results(self):
         self.control.compare_results()
+
+    def table_alg_chosen(self,table_index, indexes_model):
+        self.control.show_alg_properties(table_index, indexes_model)
+        
         
