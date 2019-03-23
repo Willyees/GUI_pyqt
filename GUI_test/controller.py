@@ -4,13 +4,17 @@ class Controller(object):
     """MVC controller, lets view and model indirectly communicate"""
     
 
-    def __init__(self, model, view):
+    def __init__(self, model, view, script = False):
+        
         self.model = model
         self.listener = view.listener
         self.listener.control = self
         self.listener.control.print()
         self.view = view
-        
+        if(script):
+            self.script()
+            return
+
         self.startView()
         
 
@@ -31,7 +35,10 @@ class Controller(object):
     def show_result(self, results):
         alg_name = self.model.get_current_alg_name()
         names_results = self.model.get_results_alg_names()
-        self.view.show_algorithm_results(alg_name, results, names_results)
+        train_set_prop = self.model.show_train_set_properties()
+        test_set_prop = self.model.show_test_set_properties()
+        self.view.show_algorithm_results(train_set_prop, test_set_prop, alg_name, results, names_results)
+#show_algorithm_results(self, train_set_name, test_set_name, attr_n, algorithm, results, names_results, compare_results = [], compare_names = []):
 
     def set_run_algorithm(self):
          """set new algorithm in the model and run it"""
@@ -162,12 +169,16 @@ class Controller(object):
         results = self.model.get_results(result_indexes)
         results_names_chosen = self.model.get_results_alg_names_chosen(result_indexes)
         last_result = self.model.get_last_result()
+        train_set_prop = self.model.show_train_set_properties()
+        test_set_prop = self.model.show_test_set_properties()
         if(results):
             alg_name = self.model.get_current_alg_name()
             names_results = self.model.get_results_alg_names()
-            self.view.show_algorithm_results(alg_name, last_result, names_results, results, results_names_chosen)
+            self.view.show_algorithm_results(train_set_prop, test_set_prop, alg_name, last_result, names_results, results, results_names_chosen)
 
     def script(self):
-        training = self.model.read_training_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\filtered_freq_normmax_names.csv")
-        testing = self.model.read_testing_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\tests\test_freq_filtered_maxnorm_names.csv")
-        self.model.apply_algorithm("som")
+        self.model.load_dataset('test')
+        #training = self.model.read_training_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\filtered_freq_normmax_names.csv")
+        #testing = self.model.read_testing_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\tests\test_freq_filtered_maxnorm_names.csv")
+        print(self.model.show_train_set_properties())
+        print(self.model.show_test_set_properties())

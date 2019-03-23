@@ -42,7 +42,7 @@ class Model(object):
     def set_current_algorithm(self, algorithm):
         """set the current algorithm as the one passed as argument with default settings"""
         for elem in self.algorithms: #find the algorithm required amongst the available ones and load it
-            if elem.name == str.lower(algorithm):
+            if elem.name == algorithm:
                 alg = elem
                 self.current_algorithm = alg
                 break
@@ -118,13 +118,13 @@ class Model(object):
     def get_results_alg_names(self):
         names = []
         for result in self.results:
-            names.append(result.algorithm_settings.name)
+            names.append(result.algorithm_settings.name_print)
         return names
     
     def get_results_alg_names_chosen(self, indexes):
         names = []
         for index in indexes:
-            names.append(self.results[index].algorithm_settings.name)
+            names.append(self.results[index].algorithm_settings.name_print)
         return names
 
     def get_last_result(self):
@@ -193,7 +193,19 @@ class Model(object):
     def get_dataset_current_name(self):
         print('current dataset:', self.dataset.name)
         return self.dataset.name
+
+    def get_test_set_current_name(self):
+        return self.testing_set.name
+
+    def get_attr_size(self):
+        return self.dataset.attr_size
     
+    def show_test_set_properties(self):
+        return self.testing_set.show_dataset()
+    
+    def show_train_set_properties(self):
+        return self.dataset.show_dataset()
+
     def read_testing_set(self, path):
         if not(os.path.isfile(path)):
             print("No file matching the directory specified for ", path)
@@ -654,6 +666,16 @@ class Dataset(object):
         self.size = 0
         self.name = ''
         self.path = ''
+        ##print variables
+        self.name_print = "Name Dataset"
+        self.attr_size_print = "Number of attributes"
+        self.normal_n_print = "Normal connections"
+        self.attack_n_print = "Attack connections"
+        self.size_print = "Number of total connections"
+
+    def show_dataset(self):
+        """method returing a dictionary useful to the view to print all the relevant informations"""
+        return {self.name_print : self.name, self.attr_size_print : self.attr_size, self.normal_n_print : self.normal_n, self.attack_n_print : self.attack_n, self.size_print : self.size}
 
     def set_properties(self, normal_label = 'normal.'):
         if len(self.data) != 0:
@@ -716,7 +738,7 @@ class Algorithm(object): #abstract class
 class Algorithm_Som(Algorithm):
     def __init__(self, x = 6, y = 6, sigma = 1.0, learning_rate = 0.5, neighborhood_function = 'gaussian', random_seed = None): #intial settings
         super(Algorithm_Som, self).__init__()
-        self.name = 'som'
+        self.name = 'Self Organizing Map'
         self.x = x
         self.y = y
         self.sigma = sigma
@@ -725,6 +747,7 @@ class Algorithm_Som(Algorithm):
         self.random_seed = random_seed
 
         #variables holding print names for internal settings
+        self.name_print = 'som'
         self.x_print = 'Map Width'
         self.y_print = 'Map Height'
         self.sigma_print = 'Sigma'
@@ -848,10 +871,11 @@ class Algorithm_Som(Algorithm):
 class Algorithm_Kmean(Algorithm):
     def __init__(self, cluster_n = 8, y = 1):
         super(Algorithm_Kmean, self).__init__()
-        self.name = "kmean"
+        self.name = "K-Means Clustering"
         self.cluster_n = cluster_n #specify initial settings
         self.y_power = y
         #variables holding print names for internal settings
+        self.name_print = "kmeans"
         self.cluster_n_print = "Number of clusters"
         self.y_power_print = "y"
 
@@ -1003,12 +1027,13 @@ class Fixed_Width_Clustering(Algorithm):
     def __init__(self, width, distance_alg = 'euclidean'):
         super(Fixed_Width_Clustering, self).__init__()
         #set intial clusters set
-        self.name = 'fixed width clustering'
+        self.name = "Fixed Width Clustering"
         self._clusters = []
         self._distance_func = self.calculate_distance_to_clusters_euclidean
         self.fixed_width = width
         self.distance_alg = distance_alg
         #Show properties
+        self.name_print = 'fixed wcl'
         self.fixed_width_print = "Fixed width"
         self.distance_alg_print = "Distance algorithm"
 

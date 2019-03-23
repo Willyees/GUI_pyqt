@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QApplication, QLabel, QComboBox, QHBoxLayout, QWidget, QVBoxLayout, QGroupBox, QGridLayout, QPushButton, QSlider, QScrollBar, QLayout, QLayoutItem, QCheckBox, QScrollArea, QSizePolicy, QFileDialog, QInputDialog
-from PyQt5.QtCore import Qt, QObject, pyqtSlot, QSignalMapper, QStringListModel, QModelIndex
+from PyQt5.QtWidgets import QApplication, QLabel, QComboBox, QHBoxLayout, QWidget, QVBoxLayout, QGroupBox, QGridLayout, QPushButton, QSlider, QScrollBar, QLayout, QLayoutItem, QCheckBox, QScrollArea, QSizePolicy, QFileDialog, QInputDialog, QTableWidget, QTableWidgetItem, QAbstractItemView
+from PyQt5.QtCore import Qt, QObject, pyqtSlot, QSignalMapper, QStringListModel, QModelIndex, QRect
 from PyQt5.QtGui import QPalette, QColor, QStandardItemModel
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -251,9 +251,13 @@ class View(object):
         main_layout = QGridLayout()
         layout_top_upper = QHBoxLayout()
         layout_top_upper.addWidget(QLabel(str.upper(algorithm)))
-        layout_top_upper.addWidget(QPushButton('modify settings', clicked = self.listener.show_settings_algorithm))
+        btn_settings = QPushButton('Modify settings', clicked = self.listener.show_settings_algorithm)
+        btn_settings.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
+        layout_top_upper.addWidget(btn_settings)
         if(algorithm == 'som'): #dirty
-            layout_top_upper.addWidget(QPushButton('View clusters created', clicked = self.listener.view_som_map_clusters))
+            btn_som = QPushButton('View clusters created', clicked = self.listener.view_som_map_clusters)
+            btn_som.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
+            layout_top_upper.addWidget(btn_som)
         
         group_box_results = QGroupBox('Results')
         
@@ -269,11 +273,13 @@ class View(object):
         group_box_results.setLayout(layout_results_wrapper)
         
         layout_mid = QVBoxLayout(objectName = 'layout_mid')
+        layout_datasets_info = QVBoxLayout(objectName = 'layout_datasets_info')
         layout_charts = QHBoxLayout()
         m = PlotCanvas(window) #width , height changes the size of the plot 
         m1 = PlotCanvas(window)
         layout_charts.addWidget(m)
         layout_charts.addWidget(m1)
+        layout_mid.addLayout(layout_datasets_info)
         layout_mid.addLayout(layout_charts)
         layout_bottom = QVBoxLayout()
         btn_rerun = QPushButton('RERUN', clicked = self.listener.rerun_algorithm, maximumWidth = 100)
@@ -284,6 +290,7 @@ class View(object):
         main_layout.addWidget(group_box_results,1,0,1,1)
         main_layout.addLayout(layout_mid, 1, 1)
         main_layout.addLayout(layout_bottom, 2, 1)
+        main_layout.setSizeConstraint(QLayout.SetMinAndMaxSize)
         window.setLayout(main_layout)
         
         #self.second_window.setWindowModality(Qt.ApplicationModal)
@@ -295,9 +302,9 @@ class View(object):
         self.active_window.show()
         
      
-    def show_algorithm_results(self, algorithm, results, names_results, compare_results = [], compare_names = []):
+    def show_algorithm_results(self, train_set_properties, test_set_properties, algorithm, results, names_results, compare_results = [], compare_names = []):
         self.new_window(algorithm) #work on second window
-        layout_mid = self.second_window.findChild(QVBoxLayout, name = "layout_mid")
+        layout_mid :QVBoxLayout = self.second_window.findChild(QVBoxLayout, name = "layout_mid")
         for key, value in results.items():
             layout = QHBoxLayout()
             layout.addWidget(QLabel(str(key)))
@@ -317,6 +324,43 @@ class View(object):
             layout_inner.addWidget(btn)
             layout_results.addLayout(layout_inner)
             layout_results.setAlignment(layout_inner,Qt.AlignTop)
+
+        #set datasets info
+        layout_datasets_info = self.second_window.findChild(QVBoxLayout, name = 'layout_datasets_info')
+        table_datasets = QTableWidget(2, len(train_set_properties)) #rows, columns
+        table_datasets.setHorizontalHeaderLabels(list(train_set_properties.keys()))
+        table_datasets.setVerticalHeaderLabels(['Trainset', 'Testset'])
+        table_datasets.setStyleSheet("QTableView {selection-background-color: blue;}");
+        table_datasets.setEditTriggers(QAbstractItemView.NoEditTriggers);
+        table_datasets.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        table_datasets.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        
+        
+        #table_datasets.layout().setSizeConstraint(QLayout.SetMinimumSize)
+        #table_datasets.setGeometry(QApplication.desktop().screenGeometry())
+        #set the train set info
+        for index, val in enumerate(train_set_properties.values()):
+             table_datasets.setItem(0, index, QTableWidgetItem(str(val)))
+        #set the test set info
+        layout_datasets_info.addWidget(QLabel("Testing set:"))
+        for index, val in enumerate(test_set_properties.values()):
+             table_datasets.setItem(1, index, QTableWidgetItem(str(val)))
+        table_datasets.resizeColumnsToContents()
+        width = 0.0
+        for i in range(table_datasets.columnCount()):
+            width += table_datasets.columnWidth(i)
+        width += table_datasets.verticalHeader().width()  
+        height = 0.0
+        for i in range(table_datasets.rowCount()):
+            height += table_datasets.rowHeight(i)
+        height += table_datasets.horizontalHeader().height()
+        #table.setFixedSize(table.horizontalHeader()->length()+table.verticalHeader()->width(), table.verticalHeader()->length()+table.horizontalHeader()->height())
+        
+        table_datasets.setSizePolicy(QSizePolicy.Preferred,QSizePolicy.Fixed);
+        table_datasets.setMaximumSize(width, height)
+        
+        layout_datasets_info.addWidget(table_datasets)
+        #plot the charts
         plots = self.second_window.findChildren(PlotCanvas)   
         #plot.plot_bar([detection_rate],[name])
         results_list = []
@@ -336,8 +380,35 @@ class View(object):
             results_names = [algorithm]
         for index in range(len(results_list)):
             plots[index].plot_bar(results_list[index], results_names, results_titles[index])
+       
+        
+        #table results
+        if(compare_results):
+            layout_mid = self.active_window.findChild(QVBoxLayout)
+            table_results = QTableWidget(len(compare_names), len(compare_results)) #rows, columns
+            table_results.setHorizontalHeaderLabels(list(compare_results[0].keys()))
+            compare_names = [compare_names[index] + str(index + 1) for index in range(len(compare_names))] #add index after the name
+            table_results.setVerticalHeaderLabels(compare_names)
+            table_results.setStyleSheet("QTableView {selection-background-color: blue;}");
+            table_results.setEditTriggers(QAbstractItemView.NoEditTriggers);
+            table_results.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            table_results.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             
-
+            for index in range(len(compare_results)):
+                    for inn, val in enumerate(compare_results[index].values()):
+                        table_results.setItem(index, inn, QTableWidgetItem(str(val)))
+            table_results.resizeColumnsToContents()
+            table_results.setFixedSize(table_results.horizontalHeader().length()+table_results.verticalHeader().width(), table_results.verticalHeader().length()+table_results.horizontalHeader().height())
+            
+            table_results.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+            #table_results.setMaximumSize()
+            layout_mid.addWidget(table_results)
+        #set the window size bigger
+        geom = self.second_window.geometry()
+        geom.setWidth(1000)
+        geom.setHeight(800)
+        self.second_window.setGeometry(geom)
+        
     def show_new_window_scatterplot(self, labels_element, x_coords, y_coords, name = None):
         if len(x_coords) != len(y_coords):
             print("missing coordinates for categories to represent in the scatterplot")
@@ -435,9 +506,10 @@ class PlotCanvas(FigureCanvas):
     def __init__(self, parent=None, width=2, height=4, dpi=100):
         fig = Figure(figsize=(width, height), dpi=dpi)
         #self.axes = fig.add_subplot(111)
- 
+        fig.patch.set_facecolor("None")
         FigureCanvas.__init__(self, fig)
         self.setParent(parent)
+        self.setStyleSheet("background-color:transparent;")
         
         FigureCanvas.setSizePolicy(self,
                 QSizePolicy.Expanding,
@@ -454,6 +526,8 @@ class PlotCanvas(FigureCanvas):
         chart.set_xticklabels(labels)
         chart.set_ylabel('%')
         chart.set_title(title)
+        #chart.patch.set_alpha(0.5)
+        
         self.draw()
         #matplotlib.pyplot.bar(x, height, width=0.8, bottom=None, *, align='center', data=None, **kwargs)[source]
         #https://matplotlib.org/api/_as_gen/matplotlib.pyplot.bar.html
