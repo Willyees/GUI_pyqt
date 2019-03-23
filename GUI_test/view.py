@@ -343,6 +343,7 @@ class View(object):
         for index, val in enumerate(test_set_properties.values()):
              table_datasets.setItem(1, index, QTableWidgetItem(str(val)))
         table_datasets.resizeColumnsToContents()
+        table_datasets.updateGeometries()
         width = 0.0
         for i in range(table_datasets.columnCount()):
             width += table_datasets.columnWidth(i)
@@ -413,6 +414,7 @@ class View(object):
                     for inn, val in enumerate(compare_results[index].values()):
                         table_results.setItem(index, inn, QTableWidgetItem(str(val)))
             table_results.resizeColumnsToContents()
+        table_results.updateGeometries()
         table_results.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         table_results.setFixedSize(table_results.horizontalHeader().length()+table_results.verticalHeader().width(), table_results.verticalHeader().length()+table_results.horizontalHeader().height())
             
@@ -430,25 +432,23 @@ class View(object):
         #clear layout
         
         layout = self.active_window.findChild(QVBoxLayout, name = "layout_result_alg_prop")
-        #if(layout == None):
-        #    return
-        table = QTableWidget()
-        table.setRowCount(1)
-        table.setColumnCount(len(properties))
-        #self.clean_layout(layout)
-        #table = QTableWidget(1, len(properties))
+        if(layout == None):
+            return
+        table = QTableWidget(1,len(properties))
+        self.clean_layout(layout)
+        
         table.setEditTriggers(QAbstractItemView.NoEditTriggers);
         table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         table.setHorizontalHeaderLabels(list(properties.keys()))
-        table.resizeColumnsToContents()
-        table.resizeRowsToContents()
+        
+        
         table.setVerticalHeaderLabels([name_alg])
         for index, val in enumerate(properties.values()):
             table.setItem(0, index, QTableWidgetItem(str(val)))
 
-
-        
+        table.resizeColumnsToContents()
+        table.updateGeometries()
         #width = 0.0
         #for i in range(table.columnCount()):
         #    width += table.columnWidth(i)
