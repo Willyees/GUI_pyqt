@@ -198,8 +198,4 @@ class Controller(object):
         self.view.show_alg_properties_chosen(name, properties)
     
     def script(self):
-        self.model.load_dataset('test')
-        #training = self.model.read_training_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\filtered_freq_normmax_names.csv")
-        #testing = self.model.read_testing_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\tests\test_freq_filtered_maxnorm_names.csv")
-        print(self.model.show_train_set_properties())
-        print(self.model.show_test_set_properties())
+        self.model.script()

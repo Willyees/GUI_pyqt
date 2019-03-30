@@ -58,7 +58,7 @@ class View(object):
         layout_top_upper.addWidget(btn_ntb)
         
         #debugging
-        btn_test = QPushButton('test', clicked = self.test)
+        btn_test = QPushButton('test', clicked = self.listener.test)
         layout_top_upper.addWidget(btn_test)
         #
         
@@ -411,7 +411,7 @@ class View(object):
             
 
             for index, val in enumerate(results.values()):
-                table_results.setItem(0,index, QTableWidgetItem(str(val)))
+                table_results.setItem(0,index, QTableWidgetItem(str(round(val, 2))))
         else:
             
             table_results = QTableWidget(len(compare_names), len(compare_results[0]), objectName = 'table_results') #rows, columns
@@ -427,7 +427,7 @@ class View(object):
             
             for index in range(len(compare_results)):
                     for inn, val in enumerate(compare_results[index].values()):
-                        table_results.setItem(index, inn, QTableWidgetItem(str(val)))
+                        table_results.setItem(index, inn, QTableWidgetItem(str(round(val, 2))))
             table_results.resizeColumnsToContents()
         table_results.updateGeometries()
         table_results.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
@@ -673,3 +673,5 @@ class EventListener(object):
         self.control.show_alg_properties(table_index, indexes_model)
         
         
+    def test(self):
+        self.control.script()

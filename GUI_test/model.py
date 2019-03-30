@@ -10,9 +10,97 @@ from minisom import MiniSom
 from timeit import default_timer as timer
 from collections import defaultdict
 import itertools
+import random
 
 class Model(object):
-    
+    def script(self):
+        #f = open(r"C:\Users\User\Downloads\kddcup.data_10_percent\tests\results.csv", "a")
+        #print("training: All data")
+        #f.write("training: All data\n")
+        self.read_training_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\tests\train\freq_maxnorm.csv")
+        #print("testing: new attacks - all data")
+        #f.write("testing: new attacks - all data\n")
+        self.read_testing_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\tests\final_tests\original_freq_maxnorm.csv")
+        #self.test_kmeans()
+        self.test_fixed()
+        self.test_som()
+        #f.write("testing: same attacks\n")
+        self.read_testing_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\tests\final_tests\sameattacks_freq_maxnorm.csv")
+        self.test_kmeans()
+        self.test_fixed()
+        self.test_som()
+        #f.write("training: no dos data\n")
+        #f.write("testing: new attacks\n")
+        self.read_training_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\tests\train\nodos_freq_5filtered_maxnorm.csv")
+        self.read_testing_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\tests\final_tests\original_freq_maxnorm_nodos_filtered.csv")
+        self.test_kmeans()
+        self.test_fixed()
+        self.test_som()
+        #f.write("testing: same attacks\n")
+        self.read_testing_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\tests\final_tests\sameattacks_nodos_freq_maxnorm_5filtered.csv")
+        self.test_kmeans()
+        self.test_fixed()
+        self.test_som()
+        #f.close()
+
+
+    def test_kmeans(self, a = [], new = False):
+        f = open(r"C:\Users\User\Downloads\kddcup.data_10_percent\tests\results.csv", "a")
+        f.write("kmeans\n")
+        if (a):
+            p = a
+        else:
+            p = range(0,26, 5)
+        kmeans = Algorithm_Kmean()
+        for i in p:
+            if i == 0:
+                i = 2
+            kmeans.cluster_n = i
+            result = kmeans.apply_alg(self.dataset, self.testing_set)
+            results = result.show_results()
+            f.write("clust_n," + str(i) + "\n")
+            for key, val in results.items():
+                f.write(str(key) + "," + str(val) + "\n")
+        f.close()
+
+    def test_fixed(self, a = [], new = False):
+        f = open(r"C:\Users\User\Downloads\kddcup.data_10_percent\tests\results.csv", "a")
+        f.write("fixed width\n")
+        if (a):
+            p = a
+        else:
+            p = [1.5,2.0,2.5,3.0]
+        fixed = Fixed_Width_Clustering()
+        for i in p:
+            fixed.fixed_width = i
+            result = fixed.apply_alg(self.dataset, self.testing_set)
+            results = result.show_results()
+            f.write("width," + str(i) + "\n")
+            f.write("cluster created," + str(len(fixed._clusters)) + "\n")
+            for key, val in results.items():
+                f.write(str(key) + "," + str(val) + "\n")
+        f.close()
+
+    def test_som(self, a = [], new = False):
+        f = open(r"C:\Users\User\Downloads\kddcup.data_10_percent\tests\results.csv", "a")
+        f.write("SOM\n")
+        som = Algorithm_Som()
+        if (a):
+            p = a
+        else:
+            p = range(2, 11, 2)
+        for i in p:
+            som.x = i
+            som.y = i
+            result = som.apply_alg(self.dataset, self.testing_set)
+            results = result.show_results()
+            f.write("size," + str(i) + "x" + str(i) + "\n")
+            for key, val in results.items():
+                f.write(str(key) + "," + str(val) + "\n")
+        f.close()    
+
+
+
     def __init__(self):
         self.dataset = Dataset()
         self.testing_set = Dataset()
@@ -26,7 +114,7 @@ class Model(object):
     
     def set_algorithms(self):
         #KMEAN 
-        kmean = Algorithm_Kmean(2)
+        kmean = Algorithm_Kmean()
         #kmean.set_properties({'n_cluster': 8}) #to finish
         self.algorithms.add(kmean)
         #SOM
@@ -35,7 +123,7 @@ class Model(object):
         som.set_properties_choices({som.neighborhood_function_print: ['gaussian','mexican_hat','bubble','triangle']})
         self.algorithms.add(som)
         #Fixed With Clust
-        fixed_width = Fixed_Width_Clustering(width = 2.5)
+        fixed_width = Fixed_Width_Clustering()
         fixed_width.set_properties_choices({fixed_width.distance_alg_print: ['euclidean', 'manhattan']})
         self.algorithms.add(fixed_width)
     
@@ -812,16 +900,19 @@ class Algorithm_Som(Algorithm):
     def calc_results(self, som : MiniSom, cluster_label, testing):
             attack = 0
             normal_as_attack = 0 #false negative
+            unclassified = 0
             for index, elem in enumerate(testing.data):
                 coord = som.winner(elem)
                 if(coord in cluster_label):
                     if(cluster_label[coord][0] == 'attack.'):
-                        if(testing.target[index] == 'attack.'):
+                        if(testing.target[index] != 'normal.'):
                             attack += 1
                         else:
                             normal_as_attack += 1
                 else:
                     print("training elem not in cluster named")
+                    unclassified += 1
+            print("unclassified: ", str(unclassified))
             results = Result_Som(self)
             detection_rate = attack / testing.attack_n
             false_alarm = normal_as_attack / testing.normal_n
@@ -845,6 +936,7 @@ class Algorithm_Som(Algorithm):
                 clustered_map[key] = ['attack.', normal, attack]
             else:
                 print('normal and attack number is the same. messed up')
+                clustered_map[key] = ['attack.', normal, attack] #better to set is as attacks in case they are same
         return clustered_map
 
     def calculate_detection_rate(self, clusters_labeled):
@@ -863,7 +955,7 @@ class Algorithm_Som(Algorithm):
         not_detected = 0
         total = 0
         for item in clusters_labeled.values():
-            if(item == 'attack.'):
+            if(item[0] == 'attack.'):
                 not_detected += item[1]
             total += item[1]
         return not_detected / total
@@ -1024,7 +1116,7 @@ class Algorithm_Kmean(Algorithm):
         print(total)
 
 class Fixed_Width_Clustering(Algorithm):
-    def __init__(self, width, distance_alg = 'euclidean'):
+    def __init__(self, width = 2.5, distance_alg = 'euclidean'):
         super(Fixed_Width_Clustering, self).__init__()
         #set intial clusters set
         self.name = "Fixed Width Clustering"
@@ -1053,7 +1145,9 @@ class Fixed_Width_Clustering(Algorithm):
     
     def apply_alg(self, training, testing):
         print('Running ', self.name)
+        self._clusters = [] #reset the cluster (from previous runs)
         train_cluster_labels = self.train_alg_labels(training.data, training.target)
+        print(train_cluster_labels)
         test_map_label = self.test_alg_label(testing.data, testing.target)
         map_labels = list(zip(list(zip(*train_cluster_labels))[0],test_map_label))
         out = []
@@ -1064,6 +1158,7 @@ class Fixed_Width_Clustering(Algorithm):
             out.append(temp)
     
         results = Result_Fixed_Width_Clustering(self)
+        print(out)
         detection_rate = self.calculate_detection_rate(out)
         false_alarm = self.calculate_false_alarm(out)
         results.detection_rate = detection_rate
@@ -1106,14 +1201,14 @@ class Fixed_Width_Clustering(Algorithm):
     def train_alg(self, training):
         print("Running Algorithm")
         self.set_distance_func()
-        self.add_cluster(training[len(training) -1]) #better to pick it randomly | center_id = random_state.randint(n_samples)
+        self.add_cluster(training[0]) #better to pick it randomly | center_id = random_state.randint(n_samples)
         labels = [0]
-        for index in range(len(training) - 1):
+        for index in range(1,len(training)):
              distances = self.calculate_distance_to_clusters([training[index]])
              min_index = self.get_smallest_index(distances[0])
              if(distances[0][min_index] < self.fixed_width):
                  labels.append(min_index)
-                 pass
+                 
              else:
                  self.add_cluster(training[index])
                  labels.append(len(self._clusters) - 1)
@@ -1138,6 +1233,7 @@ class Fixed_Width_Clustering(Algorithm):
             else:
                 #print("number of attacks and normal connections are the same")
                 elem[0] = 'attack.'
+        
         return temp
 
     def test_alg(self, testing):
