@@ -5,7 +5,7 @@ from model import *
 
 
 def main():
-    contr = Controller(Model(), View(), True)
+    contr = Controller(Model(), View(), False)
     #m.timer()
     
 main()

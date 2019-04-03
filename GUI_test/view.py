@@ -10,17 +10,17 @@ from collections import deque
 
 class View(object):
     def __init__(self):
-        print("init")
         self.listener = EventListener()
         self.app = QApplication([])
         self.window = QWidget()
+        self.window.setWindowTitle('BadWekaCopy')
         self.window.setMinimumSize(400,400)
         self.second_window = QWidget()
         self.second_window.setAttribute(Qt.WA_DeleteOnClose)
         self.additional_windows = []
         self.attribute_checked = 0
         self.active_window = QWidget()
-      
+        
     def startView(self, dataset_names, algorithm_names):
         main_layout = QGridLayout()
         
@@ -35,11 +35,11 @@ class View(object):
         cmb_box_dataset.currentIndexChanged.connect(self.listener.dataset_chosen_changed)#connecting after adding items, so it wont trigger the signal
         label_dataset = QLabel('Datasets')
         label_dataset.setBuddy(cmb_box_dataset)
-        btn_import_training = QPushButton('IMPORT', clicked = self.listener.import_dataset)
+        btn_import_training = QPushButton('Import trainset', clicked = self.listener.import_dataset)
         btn_import_test = QPushButton('Import testset', clicked = self.listener.import_test_set)
-        btn_del_attr = QPushButton('del attr', objectName = 'delbtn', clicked = self.listener.remove_selected_attr, enabled = False)
+        btn_del_attr = QPushButton('Del attribute', objectName = 'delbtn', clicked = self.listener.remove_selected_attr, enabled = False)
         btn_ntb = QPushButton('Transform to binary', objectName = 'ntbbtn', clicked = self.listener.nominal_to_binary, enabled = False)
-        
+        btn_ntb.hide()
         #btn_import.setStyleSheet("background : yellow")
         pal = btn_import_training.palette()
         #pal.setColor(QPalette.Active, QPalette.Button, QColor(Qt.yellow))
@@ -58,8 +58,8 @@ class View(object):
         layout_top_upper.addWidget(btn_ntb)
         
         #debugging
-        btn_test = QPushButton('test', clicked = self.listener.test)
-        layout_top_upper.addWidget(btn_test)
+        #btn_test = QPushButton('test', clicked = self.listener.test)
+        #layout_top_upper.addWidget(btn_test)
         #
         
         #layout testing dataset
@@ -247,6 +247,7 @@ class View(object):
 
     def new_window(self, algorithm):
         window = QWidget(destroyed = self.closed_second_window)
+        window.setWindowTitle('Hon2019')
         window.setAttribute(Qt.WA_DeleteOnClose)
         main_layout = QGridLayout()
         layout_top_upper = QHBoxLayout()
@@ -512,6 +513,7 @@ class View(object):
         info: text to dispay at the top of the window (bold)"""
         window = QWidget(destroyed = self.closed_additional_window)
         window.setAttribute(Qt.WA_DeleteOnClose)
+        window.setWindowTitle('Hon2019')
         main_grid = QGridLayout()
         layout_info = QHBoxLayout()
         info = QLabel(info)
@@ -622,7 +624,6 @@ from controller import *
 class EventListener(object):
     
     def __init__(self):
-        print('event intiated')
         control : Controller = None
 
     def dataset_chosen_changed(self):

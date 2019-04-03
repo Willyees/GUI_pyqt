@@ -17,30 +17,30 @@ class Model(object):
         #f = open(r"C:\Users\User\Downloads\kddcup.data_10_percent\tests\results.csv", "a")
         #print("training: All data")
         #f.write("training: All data\n")
-        self.read_training_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\tests\train\freq_maxnorm.csv")
-        #print("testing: new attacks - all data")
-        #f.write("testing: new attacks - all data\n")
-        self.read_testing_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\tests\final_tests\original_freq_maxnorm.csv")
+        #self.read_training_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\tests\train\freq_maxnorm.csv")
+        ##print("testing: new attacks - all data")
+        ##f.write("testing: new attacks - all data\n")
+        #self.read_testing_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\tests\final_tests\original_freq_maxnorm.csv")
+        ##self.test_kmeans()
+        #self.test_fixed()
+        #self.test_som()
+        ##f.write("testing: same attacks\n")
+        #self.read_testing_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\tests\final_tests\sameattacks_freq_maxnorm.csv")
         #self.test_kmeans()
-        self.test_fixed()
-        self.test_som()
-        #f.write("testing: same attacks\n")
-        self.read_testing_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\tests\final_tests\sameattacks_freq_maxnorm.csv")
-        self.test_kmeans()
-        self.test_fixed()
-        self.test_som()
+        #self.test_fixed()
+        #self.test_som()
         #f.write("training: no dos data\n")
         #f.write("testing: new attacks\n")
-        self.read_training_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\tests\train\nodos_freq_5filtered_maxnorm.csv")
-        self.read_testing_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\tests\final_tests\original_freq_maxnorm_nodos_filtered.csv")
+        self.read_training_set(r"C:\Users\User\Downloads\NSL-KDD\updated\KDDTrain+_freq_maxnorm.csv")
+        self.read_testing_set(r"C:\Users\User\Downloads\NSL-KDD\updated\KDDTest+_freq_maxnorm.csv")
         self.test_kmeans()
         self.test_fixed()
         self.test_som()
         #f.write("testing: same attacks\n")
-        self.read_testing_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\tests\final_tests\sameattacks_nodos_freq_maxnorm_5filtered.csv")
-        self.test_kmeans()
-        self.test_fixed()
-        self.test_som()
+        #self.read_testing_set(r"C:\Users\User\Downloads\kddcup.data_10_percent\tests\final_tests\sameattacks_nodos_freq_maxnorm_5filtered.csv")
+        #self.test_kmeans()
+        #self.test_fixed()
+        #self.test_som()
         #f.close()
 
 
@@ -396,7 +396,7 @@ class Model(object):
             print("Attribute value is incorrect: empty")
             return ""
 
-        if (item.replace('.', '').replace('e', '').replace('-',"").isdecimal()):#working atm, very likely that string inputted do not follow only these paramethers
+        if (item.replace('.', '').replace('e', '').replace('E', '').replace('-',"").isdecimal()):#working atm, very likely that string inputted do not follow only these paramethers
         #if(self.is_float(item)): #slower than checking manually
             if (item.find('.') == -1):
                     return int(item)
@@ -961,7 +961,7 @@ class Algorithm_Som(Algorithm):
         return not_detected / total
 
 class Algorithm_Kmean(Algorithm):
-    def __init__(self, cluster_n = 8, y = 1):
+    def __init__(self, cluster_n = 2, y = 1):
         super(Algorithm_Kmean, self).__init__()
         self.name = "K-Means Clustering"
         self.cluster_n = cluster_n #specify initial settings
@@ -969,7 +969,7 @@ class Algorithm_Kmean(Algorithm):
         #variables holding print names for internal settings
         self.name_print = "kmeans"
         self.cluster_n_print = "Number of clusters"
-        self.y_power_print = "y"
+        self.y_power_print = "y power Outlier factor"
 
     def get_properties(self):
         properties = {self.cluster_n_print : self.cluster_n, self.y_power_print: self.y_power}
