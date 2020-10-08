@@ -1,0 +1,5 @@
+matplotlib==3.2.1
+MiniSom==2.2.6
+numpy==1.18.2
+PyQt5==5.15.1
+scikit_learn==0.23.2
