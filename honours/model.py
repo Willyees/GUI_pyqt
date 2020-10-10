@@ -5,6 +5,7 @@ import os.path
 from sklearn.cluster import KMeans
 from sklearn.metrics.pairwise import euclidean_distances, manhattan_distances
 from sklearn import preprocessing
+from sklearn.model_selection import train_test_split
 import math
 from minisom import MiniSom
 from timeit import default_timer as timer
@@ -437,9 +438,9 @@ class Model(object):
         print(str(end - start))
 
     def load_dataset(self, dataset_name):
-        """retreives data and works on it"""
+        """retreives data and works on it. Returns string of testset, in case is empty it means that the dataset has been imported and is not one of the predefined one (didnt load the test set)"""
         #find dataset directory in map
-        #DEBUG
+        #very small dataset hardcoded for DEBUG purposes
         if(dataset_name.upper() == "TEST"):
             self.clear_storage_new_load()
             print('Reading dataset') #trainign and testing are the same
@@ -457,14 +458,22 @@ class Model(object):
         elif(dataset_name.upper() == "KDD99"): #special case. Using sklearn lib to load it
             self.clear_storage_new_load()
             print('Reading dataset') #not loading testing, have to use import button
-            kdd = datasets.fetch_kddcup99()
-            self.dataset.data = kdd.data
-            self.dataset.target = np.array([str(x, 'utf') for x in kdd.target])
+            kdd = datasets.fetch_kddcup99()            
+            X_train, X_test, y_train, y_test = train_test_split(kdd.data, kdd.target, test_size = 0.1)
+            self.dataset.data = X_train
+            self.dataset.target = np.array([str(x, 'utf') for x in y_train])
             self.dataset.set_attribute_names(np.array(['duration','protocol_type','service','flag','src_bytes','dst_bytes','land','wrong_fragment','urgent','hot','num_failed_logins','logged_in','num_compromised','root_shell','su_attempted','num_root','num_file_creations','num_shells','num_access_files','num_outbound_cmds','is_host_login','is_guest_login','count','srv_count','serror_rate','srv_serror_rate','rerror_rate','srv_rerror_rate','same_srv_rate','diff_srv_rate','srv_diff_host_rate','dst_host_count','dst_host_srv_count','dst_host_same_srv_rate','dst_host_diff_srv_rate','dst_host_same_src_port_rate','dst_host_srv_diff_host_rate','dst_host_serror_rate','dst_host_srv_serror_rate','dst_host_rerror_rate','dst_host_srv_rerror_rate'])) # no class attribute name
             self.dataset.set_properties()
             self.dataset.set_name_path('KDD99', 'inner')
             self.datasets_location['KDD99'] = 'inner'
+            self.testing_set.data = X_test
+            self.testing_set.target = np.array([str(x, 'utf') for x in y_test])
+            self.testing_set.set_attribute_names(np.array(['duration','protocol_type','service','flag','src_bytes','dst_bytes','land','wrong_fragment','urgent','hot','num_failed_logins','logged_in','num_compromised','root_shell','su_attempted','num_root','num_file_creations','num_shells','num_access_files','num_outbound_cmds','is_host_login','is_guest_login','count','srv_count','serror_rate','srv_serror_rate','rerror_rate','srv_rerror_rate','same_srv_rate','diff_srv_rate','srv_diff_host_rate','dst_host_count','dst_host_srv_count','dst_host_same_srv_rate','dst_host_diff_srv_rate','dst_host_same_src_port_rate','dst_host_srv_diff_host_rate','dst_host_serror_rate','dst_host_srv_serror_rate','dst_host_rerror_rate','dst_host_srv_rerror_rate'])) # no class attribute name
+            self.testing_set.set_properties()
             
+            #remove the categorical attributes. Too many attributes would be created by transforming to binary
+            self.remove_attributes_dataset([1,2,3])
+            self.remove_attributes_testset([1,2,3])
         else:
             if(dataset_name in self.datasets_location): #only execute if the dataset name is present in the map
                 return self.read_training_set(self.datasets_location[dataset_name])
@@ -613,7 +622,28 @@ class Model(object):
             else:
                 categories.append([self.dataset.data[i][index], 1])
         return categories
+    
+    def remove_attributes_testset(self, attributes):
+        if isinstance(self.testing_set.data, np.ndarray):
+            self.testing_set.data = np.delete(self.testing_set.data, attributes, 1)
+            self.testing_set.attr_names = np.delete(self.testing_set.attr_names, attributes, 0)
+            self.testing_set.set_properties()
+            print('attributes :', attributes, 'deleted')
+            print(self.testing_set.attr_size, self.testing_set.data[0])
             
+        elif isinstance(self.testing_set.data, list):
+            print('list')
+            new_dataset = [] 
+            for record in self.testing_set.data:
+                new_dataset.append(np.delete(record, attributes)) #very slow method to create new dataset
+            print(len(new_dataset[0]), new_dataset[0])
+            self.testing_set.data = new_dataset
+            self.testing_set.set_properties()
+
+        else:
+            print("Error - cant remove from empty dataset")
+        return None
+
     def remove_attributes_dataset(self, attributes):
         if isinstance(self.dataset.data, np.ndarray):
             self.dataset.data = np.delete(self.dataset.data, attributes, 1)
