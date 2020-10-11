@@ -114,10 +114,9 @@ K-means only reaches 20% for 20 clusters before starting to drop off, most likel
 
 The above results were obtained with the standardized NSL-KDD99 filtered trainset. It can be seen that the detection rate is noticeably lower. This is caused by the different ratio of attack#/normal#. In fact in the second having less attacks, the models are under-trained for anomaly connections, resulting in a less detection rate.
 
-
 Overall, there is not much difference in performances registered between the unsupervised K-Means and supervised single-linkage. In case of high cost on determining the labels for the training set, it should be chosen the unsupervised algorithm.
 
 The overall detection rate performance is very dependent on the training data distribution. This is especially visible on the SOM, where the high number of attacks will create a map highly specialized for anomalies and misplace normal connections.
 
-
 The experiment performed were much more extended than the only ones proposed here. If you want to get bored, I might provide the dissertation if contacted by e-mail.
+
